@@ -1,38 +1,52 @@
 #!/usr/bin/env python3
 """
-Simulate ancestral recombination graphs (ARGs) under the coalescent with
-recombination (Hudson's algorithm) and emit local trees or a tskit
-TreeSequence.
+Simulate ancestral recombination graphs (ARGs) and emit local trees or a
+tskit TreeSequence. Two recombination models are available via `mode`:
+
+* "hudson" (default): the coalescent with recombination over a continuous
+  genome [0, L); lineages are cut at arbitrary breakpoints.
+* "reassortment": a segmented-genome model (as in segmented viruses such as
+  influenza). The genome is K discrete unit segments and whole segments are
+  reassorted between parents; there is no within-segment recombination.
 
 Model
 -----
-Going backward in time from the present, two kinds of events occur:
+Going backward in time from the present, two kinds of events compete:
 
-* Coalescence. When k ancestral lineages remain, each of the C(k, 2) pairs
-  coalesces at rate 1 / (ploidy * Ne) per generation, so the total
-  coalescence rate is C(k, 2) / (ploidy * Ne). Two lineages chosen uniformly
-  at random merge into a common ancestor.
+* Coalescence (both modes). When k ancestral lineages remain, each of the
+  C(k, 2) pairs coalesces at rate 1 / (ploidy * Ne) per generation, so the
+  total coalescence rate is C(k, 2) / (ploidy * Ne). Two lineages chosen
+  uniformly at random merge into a common ancestor.
 
-* Recombination. Each lineage recombines at rate rho per unit of ancestral
-  span it carries; a lineage whose ancestral material stretches from `left`
-  to `right` therefore recombines at rate rho * (right - left). At a
-  recombination the lineage splits into two parents at a breakpoint drawn
-  uniformly within (left, right): one parent inherits the ancestral material
-  to the left of the breakpoint, the other the material to the right.
+* Recombination (mode="hudson"). Each lineage recombines at rate rho per unit
+  of ancestral span it carries; a lineage spanning [left, right) recombines at
+  rate rho * (right - left). The lineage splits into two parents at a
+  breakpoint drawn uniformly within (left, right): one parent inherits the
+  material left of the breakpoint, the other the material to the right.
+
+* Reassortment (mode="reassortment"). Each lineage ancestral for >= 2 segments
+  reassorts at the constant rate `reassortment_rate`. At a reassortment every
+  segment the lineage carries is assigned independently to the first parent
+  with probability `reassortment_bias` (default 0.5) and to the second
+  otherwise. Because the two parents are exchangeable, `bias` and 1 - `bias`
+  give the same distribution; the bias controls how lopsided splits are
+  (0.5 = most even / most reassortment, towards 0 or 1 = mostly no-op events).
 
 The waiting time to the next event is Exponential(total rate over all
-lineages). The simulation stops once every position in the genome has reached
-its most recent common ancestor.
+lineages). The simulation stops once every genomic position has reached its
+most recent common ancestor.
 
 Ancestral material
 ------------------
-Each lineage carries a set of genomic segments [left, right) over which it is
-ancestral to the sample, together with the node that is currently ancestral
-over each segment. A coalescence records edges only where the two lineages
-overlap (those are the events that appear in a local tree); once a position is
-shared by a single lineage it has found its MRCA and is dropped. This is the
-standard succinct (tskit) representation: a recombination is not a node, it is
-simply a child connecting to two different parents over disjoint intervals.
+Each lineage carries a set of segments [left, right) over which it is
+ancestral to the sample, together with the node currently ancestral over each.
+A coalescence records edges only where two lineages overlap (the events that
+appear in a local tree); once a position is shared by a single lineage it has
+found its MRCA and is dropped. This is the succinct (tskit) representation: a
+recombination/reassortment is not a node, it is simply a child connecting to
+two parents over disjoint intervals. In reassortment mode every segment
+boundary is at an integer, so a reassortment splits a lineage along those
+boundaries.
 
 Conventions
 -----------
@@ -40,13 +54,16 @@ Conventions
 * ploidy = 1 (default) treats the population as haploid (Ne gene copies,
   pairwise rate 1/Ne). ploidy = 2 treats Ne as diploid (2*Ne gene copies,
   pairwise rate 1/(2*Ne)).
-* rho is the per-site, per-generation recombination rate.
-* L is the genome length; branch lengths are in generations.
+* rho is the per-site, per-generation recombination rate (hudson mode).
+* L is the genome length; in reassortment mode it equals the number of
+  segments K, with unit segments [0,1), [1,2), ..., [K-1, K).
+* Branch lengths are in generations.
 
 Output formats
 --------------
 * Newick (default): one local/marginal tree per line, each prefixed with the
-  genomic interval [left, right) over which it applies.
+  genomic interval [left, right) over which it applies (adjacent intervals
+  sharing the same tree are merged).
 * tskit TreeSequence: the node and edge tables are combined into a
   TreeSequence spanning [0, L). Requires the `tskit` package.
 """
@@ -178,7 +195,42 @@ def _split_lineage(segments, bp):
     return left, right
 
 
-def simulate_arg(n, Ne, rho, L, ploidy=1, rng=None):
+def _segment_count(segments):
+    """Number of unit segments a lineage is ancestral for (integer-aligned)."""
+    return sum(r - l for l, r, _ in segments)
+
+
+def _reassort_split(segments, bias, rng):
+    """Split a lineage's segments between two parents by per-segment assortment.
+
+    The genome is integer-aligned (unit segments). Each unit segment [i, i+1)
+    the lineage carries is assigned to the first parent with probability `bias`
+    and to the second otherwise. Returns (first_parent, second_parent) segment
+    lists; if one is empty the event was a no-op.
+    """
+    first, second = [], []
+    for l, r, nid in segments:
+        i, end = int(round(l)), int(round(r))
+        while i < end:
+            target = first if rng.random() < bias else second
+            target.append((float(i), float(i + 1), nid))
+            i += 1
+    return _coalesce_adjacent(first), _coalesce_adjacent(second)
+
+
+def _weighted_choice(weights, rng):
+    """Return an index chosen with probability proportional to `weights`."""
+    x = rng.random() * sum(weights)
+    cumulative = 0.0
+    for i, w in enumerate(weights):
+        cumulative += w
+        if x < cumulative:
+            return i
+    return len(weights) - 1
+
+
+def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
+                 reassortment_rate=0.0, reassortment_bias=0.5):
     """Simulate one ARG for `n` samples over a genome of length `L`.
 
     Parameters
@@ -187,14 +239,23 @@ def simulate_arg(n, Ne, rho, L, ploidy=1, rng=None):
         Number of sampled individuals (>= 1).
     Ne : float
         Effective population size (number of individuals, > 0).
-    rho : float
-        Per-site, per-generation recombination rate (>= 0).
     L : float
-        Genome length (> 0).
+        Genome length (> 0). In reassortment mode this is the number of
+        segments K, with unit segments [0,1), ..., [K-1, K).
     ploidy : int
         1 = haploid (default), 2 = diploid. Sets gene copies = ploidy * Ne.
     rng : random.Random, optional
         Random source (pass one with a fixed seed for reproducibility).
+    mode : {"hudson", "reassortment"}
+        Recombination model (keyword-only).
+    rho : float
+        [hudson] per-site, per-generation recombination rate (>= 0).
+    reassortment_rate : float
+        [reassortment] per-lineage reassortment rate (>= 0); applies only to
+        lineages ancestral for >= 2 segments.
+    reassortment_bias : float
+        [reassortment] probability each segment goes to the first parent,
+        in [0, 1] (default 0.5).
 
     Returns
     -------
@@ -204,19 +265,27 @@ def simulate_arg(n, Ne, rho, L, ploidy=1, rng=None):
     edges : list of (left, right, parent, child)
         One record per branch; each spans the interval over which the
         parent-child relationship holds.
-    breakpoints : list of float
-        Genomic positions of the recombination events that occurred.
+    events : list
+        One entry per realized recombination/reassortment event (hudson:
+        breakpoint positions; reassortment: the index of the lineage split).
     """
     if n < 1:
         raise ValueError("n must be >= 1")
     if Ne <= 0:
         raise ValueError("Ne must be > 0")
-    if rho < 0:
-        raise ValueError("rho must be >= 0")
     if L <= 0:
         raise ValueError("L must be > 0")
     if ploidy < 1:
         raise ValueError("ploidy must be >= 1")
+    if mode not in ("hudson", "reassortment"):
+        raise ValueError("mode must be 'hudson' or 'reassortment'")
+    if mode == "hudson" and rho < 0:
+        raise ValueError("rho must be >= 0")
+    if mode == "reassortment":
+        if reassortment_rate < 0:
+            raise ValueError("reassortment_rate must be >= 0")
+        if not 0.0 <= reassortment_bias <= 1.0:
+            raise ValueError("reassortment_bias must be in [0, 1]")
 
     rng = rng or random.Random()
     pair_rate = 1.0 / (ploidy * Ne)
@@ -234,16 +303,23 @@ def simulate_arg(n, Ne, rho, L, ploidy=1, rng=None):
 
     cov = OverlapCounter(L, n)
     edges = []
-    breakpoints = []
+    events = []
     t = 0.0
 
     while len(pool) > 1:
         k = len(pool)
         coal_rate = k * (k - 1) / 2.0 * pair_rate
-        spans = [seg[-1][1] - seg[0][0] for seg in pool]
-        total_span = sum(spans)
-        recomb_rate = rho * total_span
-        total_rate = coal_rate + recomb_rate
+
+        # Per-lineage weights for the non-coalescent event and its total rate.
+        if mode == "hudson":
+            weights = [seg[-1][1] - seg[0][0] for seg in pool]   # ancestral span
+            event_rate = rho * sum(weights)
+        else:  # reassortment: only lineages with >= 2 segments can reassort
+            weights = [reassortment_rate if _segment_count(seg) >= 2 else 0.0
+                       for seg in pool]
+            event_rate = sum(weights)
+
+        total_rate = coal_rate + event_rate
         if total_rate <= 0.0:
             break
         t += rng.expovariate(total_rate)
@@ -256,21 +332,26 @@ def simulate_arg(n, Ne, rho, L, ploidy=1, rng=None):
                 pool.pop(idx)
             if merged:
                 pool.append(merged)
-        else:
-            # Choose a lineage with probability proportional to its span.
-            x = rng.random() * total_span
-            li = 0
-            while x >= spans[li]:
-                x -= spans[li]
-                li += 1
-            lineage = pool[li]
+            continue
+
+        # Otherwise a recombination (hudson) or reassortment event.
+        li = _weighted_choice(weights, rng)
+        lineage = pool[li]
+        if mode == "hudson":
             bp = rng.uniform(lineage[0][0], lineage[-1][1])
             left_part, right_part = _split_lineage(lineage, bp)
             pool.pop(li)
             pool.extend((left_part, right_part))
-            breakpoints.append(bp)
+            events.append(bp)
+        else:
+            part_a, part_b = _reassort_split(lineage, reassortment_bias, rng)
+            if part_a and part_b:        # both parents inherit material
+                pool.pop(li)
+                pool.extend((part_a, part_b))
+                events.append(li)
+            # else: every segment landed on one parent -> a no-op event
 
-    return node_time, node_is_sample, edges, breakpoints
+    return node_time, node_is_sample, edges, events
 
 
 def squash_edges(edges):
@@ -366,15 +447,24 @@ def to_tree_sequence(node_time, node_is_sample, edges, L):
 def main(argv=None):
     p = argparse.ArgumentParser(
         description="Simulate ancestral recombination graphs (ARGs) under the "
-                    "coalescent with recombination.")
+                    "coalescent with recombination or reassortment.")
     p.add_argument("-n", "--num-samples", type=int, required=True,
                    help="number of sampled individuals")
     p.add_argument("-Ne", "--Ne", type=float, required=True,
                    help="effective population size (number of individuals)")
-    p.add_argument("--rho", type=float, required=True,
-                   help="per-site, per-generation recombination rate")
-    p.add_argument("-L", "--genome-length", type=float, required=True,
-                   help="genome length")
+    p.add_argument("--mode", choices=("hudson", "reassortment"),
+                   default="hudson",
+                   help="recombination model (default: hudson)")
+    p.add_argument("--rho", type=float, default=0.0,
+                   help="[hudson] per-site, per-generation recombination rate")
+    p.add_argument("-L", "--genome-length", type=float, default=None,
+                   help="[hudson] genome length")
+    p.add_argument("--segments", type=int, default=None,
+                   help="[reassortment] number of genome segments K")
+    p.add_argument("--reassortment-rate", type=float, default=0.0,
+                   help="[reassortment] per-lineage reassortment rate")
+    p.add_argument("--reassortment-bias", type=float, default=0.5,
+                   help="[reassortment] P(segment -> first parent), default 0.5")
     p.add_argument("--ploidy", type=int, default=1, choices=(1, 2),
                    help="1 = haploid (default), 2 = diploid")
     p.add_argument("--format", choices=("newick", "tskit"), default="newick",
@@ -391,22 +481,37 @@ def main(argv=None):
                    help="output file ('-' for stdout, the default)")
     args = p.parse_args(argv)
 
+    if args.mode == "hudson":
+        if args.genome_length is None:
+            p.error("hudson mode requires -L/--genome-length")
+        genome_length = args.genome_length
+    else:
+        if args.segments is None:
+            p.error("reassortment mode requires --segments")
+        if args.segments < 1:
+            p.error("--segments must be >= 1")
+        genome_length = float(args.segments)
+
     rng = random.Random(args.seed)
-    sims = [simulate_arg(args.num_samples, args.Ne, args.rho,
-                         args.genome_length, ploidy=args.ploidy, rng=rng)
+    sims = [simulate_arg(args.num_samples, args.Ne, genome_length,
+                         ploidy=args.ploidy, rng=rng, mode=args.mode,
+                         rho=args.rho,
+                         reassortment_rate=args.reassortment_rate,
+                         reassortment_bias=args.reassortment_bias)
             for _ in range(args.replicates)]
+
+    event_label = "recombination" if args.mode == "hudson" else "reassortment"
 
     if args.format == "newick":
         out = sys.stdout if args.output == "-" else open(args.output, "w")
         try:
-            for rep, (ntime, nsample, edges, bps) in enumerate(sims):
-                trees = marginal_trees(ntime, nsample, edges,
-                                       args.genome_length,
+            for rep, (ntime, nsample, edges, events) in enumerate(sims):
+                trees = marginal_trees(ntime, nsample, edges, genome_length,
                                        decimals=args.decimals,
                                        label_internal=args.label_internal)
                 if args.replicates > 1:
                     out.write(f"# replicate {rep}\n")
-                out.write(f"# {len(bps)} recombination event(s), "
+                out.write(f"# {len(events)} {event_label} event(s), "
                           f"{len(trees)} local tree(s)\n")
                 for left, right, nwk in trees:
                     lo = f"{left:.{args.decimals}f}"
@@ -418,8 +523,8 @@ def main(argv=None):
         return
 
     # tskit format
-    for rep, (ntime, nsample, edges, _bps) in enumerate(sims):
-        ts = to_tree_sequence(ntime, nsample, edges, args.genome_length)
+    for rep, (ntime, nsample, edges, _events) in enumerate(sims):
+        ts = to_tree_sequence(ntime, nsample, edges, genome_length)
         if args.output == "-":
             sys.stdout.write(
                 f"TreeSequence {rep}: {ts.num_samples} samples, "

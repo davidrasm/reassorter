@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `reassorter` is a Python population genetics simulator. There are two standalone scripts, both outputting Newick or tskit TreeSequence format:
 
 - **`coalescent.py`** — Kingman coalescent: simulates a single backward-time genealogy (one tree).
-- **`arg.py`** — coalescent *with recombination* (Hudson's algorithm): simulates an ancestral recombination graph (ARG) and emits its local/marginal trees.
+- **`arg.py`** — coalescent *with recombination*: simulates an ancestral recombination graph (ARG) and emits its local/marginal trees. Two interchangeable models via `--mode`: `hudson` (continuous genome, arbitrary breakpoints) and `reassortment` (segmented genome, whole-segment swapping, as in influenza).
 
 `arg.py` started as a copy of `coalescent.py` and shares its conventions (Ne, ploidy, RNG, output formats), so keep terminology and CLI flags consistent across the two when editing.
 
@@ -17,9 +17,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Single coalescent tree
 python3 coalescent.py -n 10 -Ne 1000 --ploidy 2 --format newick --seed 42 -r 5 -o out.tre
 
-# ARG with recombination (--rho and -L are required)
+# ARG, Hudson recombination (default mode; -L required, --rho optional)
 python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --seed 42                 # local trees
 python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --format tskit -o arg.trees
+
+# ARG, reassortment mode (--segments required)
+python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rate 1e-3
+python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rate 1e-3 --reassortment-bias 0.8
 ```
 
 Both scripts take effective population size via `-Ne/--Ne`. Optional tskit output requires: `pip install tskit`
@@ -65,14 +69,17 @@ tables → marginal_trees(...)   # list of (left, right, newick) local trees
 edges  → squash_edges(edges)   # merge same parent/child across adjacent intervals
 ```
 
-- `simulate_arg`: backward-time loop with two competing events — coalescence (rate `C(k,2)/(ploidy*Ne)`, via `_merge_lineages`, recording edges only where lineages overlap) and recombination (per-lineage rate `rho * span`, via `_split_lineage` at a uniform breakpoint). Runs until every position has coalesced.
+- `simulate_arg`: backward-time loop with coalescence (rate `C(k,2)/(ploidy*Ne)`, via `_merge_lineages`, recording edges only where lineages overlap) competing against a mode-dependent split event, until every position has coalesced. The `mode` branch is the *only* model-specific code; lineage selection is shared via `_weighted_choice`.
+  - `mode="hudson"`: per-lineage rate `rho * span`; `_split_lineage` cuts at one uniform breakpoint over a continuous genome `[0, L)`.
+  - `mode="reassortment"`: per-lineage rate is a constant `reassortment_rate` (0 unless the lineage carries ≥2 segments); `_reassort_split` sends each integer-aligned unit segment to one of two parents independently with prob `reassortment_bias`. Genome `L` is the segment count `K`. Events where all segments land on one parent are model-faithful no-ops (skipped, not recorded).
 - `marginal_trees`: derives local trees per genomic interval from the edge table without tskit; merges adjacent intervals with identical topology.
 
 ### Key Conventions (both scripts)
 
 - Time increases going backward (samples at `t=0`)
 - `Ne` is in individuals; diploid coalescence rate uses `ploidy * Ne` as the effective haploid size
-- `rho` (arg.py) is the per-site, per-generation recombination rate; a lineage's recombination rate scales with the span of ancestral material it carries
+- `rho` (arg.py hudson mode) is the per-site, per-generation recombination rate; a lineage's recombination rate scales with the span of ancestral material it carries
+- `reassortment_bias` p and 1−p are equivalent (parents are exchangeable); p only controls how lopsided splits are — p=0.5 maximizes realized reassortment, p→0/1 makes events mostly no-ops
 - Branch lengths = difference between parent and child `time`
 - RNG is passed explicitly (`rng` parameter) for reproducibility
 - `main` in each script is the argparse CLI entry point: replicates loop, output file management, optional tskit table building
