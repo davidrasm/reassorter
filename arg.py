@@ -71,6 +71,15 @@ Output formats
 import argparse
 import random
 import sys
+from collections import namedtuple
+
+
+# Explicit ARG network produced by simulate_arg(record_graph=True). Each node is
+# a sample, coalescence, or recombination/reassortment event; each edge carries
+# the ancestral segments transmitted up that lineage (parent is the older end).
+ARGNode = namedtuple("ARGNode", ("id", "time", "type", "meta"))
+ARGEdge = namedtuple("ARGEdge", ("parent", "child", "segments"))
+ARGGraph = namedtuple("ARGGraph", ("nodes", "edges"))
 
 
 class OverlapCounter:
@@ -230,7 +239,8 @@ def _weighted_choice(weights, rng):
 
 
 def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
-                 reassortment_rate=0.0, reassortment_bias=0.5):
+                 reassortment_rate=0.0, reassortment_bias=0.5,
+                 record_graph=False):
     """Simulate one ARG for `n` samples over a genome of length `L`.
 
     Parameters
@@ -256,6 +266,9 @@ def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
     reassortment_bias : float
         [reassortment] probability each segment goes to the first parent,
         in [0, 1] (default 0.5).
+    record_graph : bool
+        If True, also build and return an explicit ARGGraph containing every
+        coalescence and recombination/reassortment node (see Returns).
 
     Returns
     -------
@@ -268,6 +281,10 @@ def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
     events : list
         One entry per realized recombination/reassortment event (hudson:
         breakpoint positions; reassortment: the index of the lineage split).
+    graph : ARGGraph or None
+        The explicit network of sample, coalescence, and recombination nodes
+        if `record_graph` is True, else None. Each edge carries the ancestral
+        segments transmitted up that lineage.
     """
     if n < 1:
         raise ValueError("n must be >= 1")
@@ -301,6 +318,18 @@ def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
     # starts as a lineage carrying the whole genome at the present (t = 0).
     pool = [[(0.0, L, new_node(0.0, True))] for _ in range(n)]
 
+    # Optional explicit ARG network. `lineage_node[i]` is the graph node at the
+    # bottom of pool[i]'s current upward stretch, kept in lockstep with `pool`.
+    graph_nodes = lineage_node = None
+    graph_edges = []
+    if record_graph:
+        graph_nodes = [ARGNode(i, 0.0, "sample", None) for i in range(n)]
+        lineage_node = list(range(n))
+
+    def new_graph_node(time, ntype, meta=None):
+        graph_nodes.append(ARGNode(len(graph_nodes), time, ntype, meta))
+        return len(graph_nodes) - 1
+
     cov = OverlapCounter(L, n)
     edges = []
     events = []
@@ -328,10 +357,18 @@ def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
             i, j = rng.sample(range(k), 2)
             A, B = pool[i], pool[j]
             merged = _merge_lineages(A, B, t, cov, edges, new_node)
+            if record_graph:
+                cgid = new_graph_node(t, "coalescence")
+                graph_edges.append(ARGEdge(cgid, lineage_node[i], list(A)))
+                graph_edges.append(ARGEdge(cgid, lineage_node[j], list(B)))
             for idx in sorted((i, j), reverse=True):
                 pool.pop(idx)
+                if record_graph:
+                    lineage_node.pop(idx)
             if merged:
                 pool.append(merged)
+                if record_graph:
+                    lineage_node.append(cgid)
             continue
 
         # Otherwise a recombination (hudson) or reassortment event.
@@ -340,18 +377,35 @@ def simulate_arg(n, Ne, L, ploidy=1, rng=None, *, mode="hudson", rho=0.0,
         if mode == "hudson":
             bp = rng.uniform(lineage[0][0], lineage[-1][1])
             left_part, right_part = _split_lineage(lineage, bp)
+            if record_graph:
+                rgid = new_graph_node(t, "recombination", {"breakpoint": bp})
+                graph_edges.append(
+                    ARGEdge(rgid, lineage_node[li], list(lineage)))
             pool.pop(li)
             pool.extend((left_part, right_part))
+            if record_graph:
+                lineage_node.pop(li)
+                lineage_node.extend((rgid, rgid))
             events.append(bp)
         else:
             part_a, part_b = _reassort_split(lineage, reassortment_bias, rng)
             if part_a and part_b:        # both parents inherit material
+                if record_graph:
+                    meta = {"to_first": [(l, r) for l, r, _ in part_a],
+                            "to_second": [(l, r) for l, r, _ in part_b]}
+                    rgid = new_graph_node(t, "recombination", meta)
+                    graph_edges.append(
+                        ARGEdge(rgid, lineage_node[li], list(lineage)))
                 pool.pop(li)
                 pool.extend((part_a, part_b))
+                if record_graph:
+                    lineage_node.pop(li)
+                    lineage_node.extend((rgid, rgid))
                 events.append(li)
             # else: every segment landed on one parent -> a no-op event
 
-    return node_time, node_is_sample, edges, events
+    graph = ARGGraph(graph_nodes, graph_edges) if record_graph else None
+    return node_time, node_is_sample, edges, events, graph
 
 
 def squash_edges(edges):
@@ -479,6 +533,9 @@ def main(argv=None):
                    help="include internal node labels in the Newick output")
     p.add_argument("-o", "--output", default="-",
                    help="output file ('-' for stdout, the default)")
+    p.add_argument("--plot", default=None,
+                   help="draw the ARG network to this image file (e.g. arg.png) "
+                        "instead of writing trees")
     args = p.parse_args(argv)
 
     if args.mode == "hudson":
@@ -492,20 +549,34 @@ def main(argv=None):
             p.error("--segments must be >= 1")
         genome_length = float(args.segments)
 
+    record_graph = args.plot is not None
     rng = random.Random(args.seed)
     sims = [simulate_arg(args.num_samples, args.Ne, genome_length,
                          ploidy=args.ploidy, rng=rng, mode=args.mode,
                          rho=args.rho,
                          reassortment_rate=args.reassortment_rate,
-                         reassortment_bias=args.reassortment_bias)
+                         reassortment_bias=args.reassortment_bias,
+                         record_graph=record_graph)
             for _ in range(args.replicates)]
+
+    if args.plot is not None:
+        from viz import draw_arg
+        for rep, (_nt, _ns, _edges, _events, graph) in enumerate(sims):
+            if args.replicates == 1:
+                path = args.plot
+            else:
+                base, dot, ext = args.plot.rpartition(".")
+                path = f"{base}.{rep}.{ext}" if dot else f"{args.plot}.{rep}"
+            draw_arg(graph, mode=args.mode, save=path)
+            sys.stdout.write(f"wrote {path}\n")
+        return
 
     event_label = "recombination" if args.mode == "hudson" else "reassortment"
 
     if args.format == "newick":
         out = sys.stdout if args.output == "-" else open(args.output, "w")
         try:
-            for rep, (ntime, nsample, edges, events) in enumerate(sims):
+            for rep, (ntime, nsample, edges, events, _graph) in enumerate(sims):
                 trees = marginal_trees(ntime, nsample, edges, genome_length,
                                        decimals=args.decimals,
                                        label_internal=args.label_internal)
@@ -523,7 +594,7 @@ def main(argv=None):
         return
 
     # tskit format
-    for rep, (ntime, nsample, edges, _events) in enumerate(sims):
+    for rep, (ntime, nsample, edges, _events, _graph) in enumerate(sims):
         ts = to_tree_sequence(ntime, nsample, edges, genome_length)
         if args.output == "-":
             sys.stdout.write(

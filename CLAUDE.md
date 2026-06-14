@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **`coalescent.py`** — Kingman coalescent: simulates a single backward-time genealogy (one tree).
 - **`arg.py`** — coalescent *with recombination*: simulates an ancestral recombination graph (ARG) and emits its local/marginal trees. Two interchangeable models via `--mode`: `hudson` (continuous genome, arbitrary breakpoints) and `reassortment` (segmented genome, whole-segment swapping, as in influenza).
+- **`viz.py`** — matplotlib drawing of an ARG as a phylogenetic network (sample / coalescence / recombination nodes, time on the y-axis). Consumes the optional `ARGGraph` from `arg.py`; only imported when plotting.
 
 `arg.py` started as a copy of `coalescent.py` and shares its conventions (Ne, ploidy, RNG, output formats), so keep terminology and CLI flags consistent across the two when editing.
 
@@ -24,9 +25,12 @@ python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --format tskit -o arg.trees
 # ARG, reassortment mode (--segments required)
 python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rate 1e-3
 python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rate 1e-3 --reassortment-bias 0.8
+
+# Draw the ARG network to an image instead of writing trees (either mode)
+python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --plot arg.png
 ```
 
-Both scripts take effective population size via `-Ne/--Ne`. Optional tskit output requires: `pip install tskit`
+Both scripts take effective population size via `-Ne/--Ne`. Optional dependencies: `pip install tskit` (for `--format tskit`), `pip install matplotlib` (for `--plot`).
 
 ## Architecture
 
@@ -73,6 +77,12 @@ edges  → squash_edges(edges)   # merge same parent/child across adjacent inter
   - `mode="hudson"`: per-lineage rate `rho * span`; `_split_lineage` cuts at one uniform breakpoint over a continuous genome `[0, L)`.
   - `mode="reassortment"`: per-lineage rate is a constant `reassortment_rate` (0 unless the lineage carries ≥2 segments); `_reassort_split` sends each integer-aligned unit segment to one of two parents independently with prob `reassortment_bias`. Genome `L` is the segment count `K`. Events where all segments land on one parent are model-faithful no-ops (skipped, not recorded).
 - `marginal_trees`: derives local trees per genomic interval from the edge table without tskit; merges adjacent intervals with identical topology.
+
+**Explicit ARG graph (`record_graph=True`)**: the default succinct/tskit `edges` output has *no* recombination nodes and discards event times, so it can't draw a network. Passing `record_graph=True` to `simulate_arg` additionally builds an `ARGGraph` (namedtuples `ARGNode`/`ARGEdge`) with explicit sample, coalescence, and recombination nodes. The loop tracks `lineage_node[i]` (the graph node at the bottom of `pool[i]`'s current upward stretch) in lockstep with `pool`; each `ARGEdge` carries the ancestral segments it transmits, so a future per-lineage segment overlay needs no new bookkeeping. Node degrees: coalescence = 2 children/1 parent, recombination = 1 child/2 parents. Graph node ids are a separate id space from the tskit node ids, leaving the succinct output untouched.
+
+### viz.py
+
+`draw_arg(graph, ...)` lays out the `ARGGraph` (y = node time; x = mean of a node's children's x, computed youngest-to-oldest) and renders it with matplotlib: circles for sample/coalescence, squares for recombination annotated with breakpoint (hudson) or segment routing (reassortment). matplotlib is imported lazily inside the function. Legible only for small ARGs.
 
 ### Key Conventions (both scripts)
 
