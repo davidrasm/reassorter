@@ -94,10 +94,12 @@ def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
     else:
         fig = ax.figure
 
+    # Rectangular routing: each lineage is a vertical segment at the child's x
+    # rising to the parent's time, then a horizontal jog across to the parent.
     for edge in graph.edges:
-        ax.plot([x[edge.child], x[edge.parent]],
-                [y[edge.child], y[edge.parent]],
-                color="0.6", lw=1.0, zorder=1)
+        xc, xp = x[edge.child], x[edge.parent]
+        yc, yp = y[edge.child], y[edge.parent]
+        ax.plot([xc, xc, xp], [yc, yp, yp], color="0.6", lw=1.0, zorder=1)
 
     styles = {"sample": ("o", "black"),
               "coalescence": ("o", "#1f77b4"),

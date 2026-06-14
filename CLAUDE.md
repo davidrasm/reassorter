@@ -82,7 +82,7 @@ edges  → squash_edges(edges)   # merge same parent/child across adjacent inter
 
 ### viz.py
 
-`draw_arg(graph, ...)` lays out the `ARGGraph` (y = node time; x = mean of a node's children's x, computed youngest-to-oldest) and renders it with matplotlib: circles for sample/coalescence, squares for recombination annotated with breakpoint (hudson) or segment routing (reassortment). matplotlib is imported lazily inside the function. Legible only for small ARGs.
+`draw_arg(graph, ...)` lays out the `ARGGraph` (y = node time; x = mean of a node's children's x, computed youngest-to-oldest) and renders it with matplotlib in a rectangular phylogram style: lineages are vertical segments with a horizontal jog to the ancestor at its time. Circles for sample/coalescence, squares for recombination annotated with breakpoint (hudson) or segment routing (reassortment). matplotlib is imported lazily inside the function. Legible only for small ARGs.
 
 ### Key Conventions (both scripts)
 
