@@ -97,7 +97,7 @@ def _layout(graph):
 
 
 def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
-             label_recomb=True, fork=0.25):
+             label_recomb=True, fork=0.25, simplify=True):
     """Draw an ARGGraph as a network and return (figure, axes).
 
     Parameters
@@ -117,10 +117,17 @@ def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
     fork : float
         Horizontal half-separation of the two parental lineages leaving a
         recombination node, in x-slot units (0 = no fork).
+    simplify : bool
+        If True (default), suppress degree-2 nodes / redundant bubbles via
+        arg.simplify_arg before drawing.
     """
     if graph is None:
         raise ValueError(
             "graph is None; call simulate_arg(..., record_graph=True)")
+
+    if simplify:
+        from arg import simplify_arg
+        graph = simplify_arg(graph)
 
     import matplotlib
     if save is not None and not show:

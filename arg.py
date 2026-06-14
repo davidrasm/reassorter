@@ -498,6 +498,55 @@ def to_tree_sequence(node_time, node_is_sample, edges, L):
     return tables.tree_sequence()
 
 
+def simplify_arg(graph):
+    """Return a copy of `graph` with degree-2 nodes suppressed.
+
+    Any non-sample node with exactly one distinct parent and one distinct child
+    carries no branching information; it is removed and its two incident edges
+    are spliced into one. This also collapses 'bubbles' where a recombination is
+    immediately undone by the two recombinant lineages coalescing back together
+    (a recombination node and coalescence node joined by a parallel edge pair).
+    Suppression is repeated until no such node remains.
+    """
+    nodes = {nd.id: nd for nd in graph.nodes}
+    alive = set(nodes)
+
+    # Edges keyed by (parent, child); parallel edges (bubbles) merge into one.
+    seg = {}
+    for edge in graph.edges:
+        key = (edge.parent, edge.child)
+        seg[key] = _coalesce_adjacent(sorted(seg.get(key, []) + list(edge.segments)))
+
+    def parents_of(v):
+        return {p for (p, c) in seg if c == v}
+
+    def children_of(v):
+        return {c for (p, c) in seg if p == v}
+
+    changed = True
+    while changed:
+        changed = False
+        for v in list(alive):
+            if nodes[v].type == "sample":
+                continue
+            par, chi = parents_of(v), children_of(v)
+            if len(par) == 1 and len(chi) == 1:
+                p, c = next(iter(par)), next(iter(chi))
+                if p == c:
+                    continue
+                spliced = seg.get((v, c), [])
+                for key in [k for k in seg if v in k]:
+                    del seg[key]
+                seg[(p, c)] = _coalesce_adjacent(
+                    sorted(seg.get((p, c), []) + list(spliced)))
+                alive.discard(v)
+                changed = True
+
+    new_nodes = [nodes[v] for v in alive]
+    new_edges = [ARGEdge(p, c, s) for (p, c), s in seg.items()]
+    return ARGGraph(new_nodes, new_edges)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(
         description="Simulate ancestral recombination graphs (ARGs) under the "
@@ -536,6 +585,10 @@ def main(argv=None):
     p.add_argument("--plot", default=None,
                    help="draw the ARG network to this image file (e.g. arg.png) "
                         "instead of writing trees")
+    p.add_argument("--no-simplify", dest="simplify", action="store_false",
+                   help="[--plot] keep degree-2 nodes instead of simplifying "
+                        "the ARG before drawing")
+    p.set_defaults(simplify=True)
     args = p.parse_args(argv)
 
     if args.mode == "hudson":
@@ -567,7 +620,7 @@ def main(argv=None):
             else:
                 base, dot, ext = args.plot.rpartition(".")
                 path = f"{base}.{rep}.{ext}" if dot else f"{args.plot}.{rep}"
-            draw_arg(graph, mode=args.mode, save=path)
+            draw_arg(graph, mode=args.mode, save=path, simplify=args.simplify)
             sys.stdout.write(f"wrote {path}\n")
         return
 
