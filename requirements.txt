@@ -1,0 +1,5 @@
+# coalescent.py and arg.py themselves need only the Python 3 standard library.
+# The packages below are optional, each enabling one feature:
+
+tskit       # arg.py/coalescent.py --format tskit (TreeSequence output)
+matplotlib  # arg.py --plot (ARG network drawing in viz.py)
