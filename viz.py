@@ -37,23 +37,62 @@ def _recomb_label(node):
 
 
 def _layout(graph):
-    """Assign (x, y) to every node: y = time, x = mean of its children's x."""
-    children = {}
+    """Tidy 'rectangular' layout: y = time, x from a spanning tree of the ARG.
+
+    Ordering the leaves by the tree topology gives every subtree a contiguous,
+    non-overlapping x-interval, so the tree-backbone horizontal jogs never cross
+    a vertical lineage. Only reticulation edges -- a recombination node's second
+    parent -- can still produce a crossing, which is unavoidable for an ARG.
+    """
+    nodes = {nd.id: nd for nd in graph.nodes}
+    children, parents = {}, {}
     for edge in graph.edges:
         children.setdefault(edge.parent, []).append(edge.child)
+        parents.setdefault(edge.child, []).append(edge.parent)
 
-    samples = sorted(nd.id for nd in graph.nodes if nd.type == "sample")
-    x = {sid: float(i) for i, sid in enumerate(samples)}
+    roots = sorted((nd.id for nd in graph.nodes if nd.id not in parents),
+                   key=lambda i: -nodes[i].time)
 
-    # Children are always younger, so processing by increasing time guarantees
-    # a node's children already have an x before it is placed.
-    for node in sorted(graph.nodes, key=lambda nd: nd.time):
-        if node.id in x:
-            continue
-        kids = children.get(node.id, [])
-        x[node.id] = sum(x[c] for c in kids) / len(kids) if kids else 0.0
+    # Spanning tree: each node is claimed by the first parent that reaches it in
+    # a downward DFS; tree_children[u] are the nodes u claims.
+    tree_children = {nd.id: [] for nd in graph.nodes}
+    visited = set()
 
-    y = {nd.id: nd.time for nd in graph.nodes}
+    def claim(u):
+        visited.add(u)
+        for child in children.get(u, []):
+            if child not in visited:
+                tree_children[u].append(child)
+                claim(child)
+
+    for root in roots:
+        claim(root)
+    for nd in graph.nodes:            # safety for anything not reached from a root
+        if nd.id not in visited:
+            claim(nd.id)
+
+    # In-order x: leaves take successive slots, internal nodes the mean of their
+    # tree children, giving each subtree a contiguous, non-overlapping interval.
+    x = {}
+    slot = [0.0]
+
+    def place(u):
+        kids = tree_children[u]
+        if not kids:
+            x[u] = slot[0]
+            slot[0] += 1.0
+        else:
+            for child in kids:
+                place(child)
+            x[u] = sum(x[child] for child in kids) / len(kids)
+
+    for root in roots:
+        place(root)
+    for nd in graph.nodes:
+        if nd.id not in x:
+            place(nd.id)
+
+    y = {nd.id: nodes[nd.id].time for nd in graph.nodes}
     return x, y
 
 
