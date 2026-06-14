@@ -97,7 +97,7 @@ def _layout(graph):
 
 
 def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
-             label_recomb=True):
+             label_recomb=True, fork=0.25):
     """Draw an ARGGraph as a network and return (figure, axes).
 
     Parameters
@@ -114,6 +114,9 @@ def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
         If True, call plt.show().
     label_recomb : bool
         Annotate recombination nodes with their breakpoint / segment routing.
+    fork : float
+        Horizontal half-separation of the two parental lineages leaving a
+        recombination node, in x-slot units (0 = no fork).
     """
     if graph is None:
         raise ValueError(
@@ -133,12 +136,28 @@ def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
     else:
         fig = ax.figure
 
-    # Rectangular routing: each lineage is a vertical segment at the child's x
-    # rising to the parent's time, then a horizontal jog across to the parent.
+    # Rectangular routing: each lineage is a vertical segment rising to the
+    # parent's time, then a horizontal jog across to the parent. At a
+    # recombination node the two parental lineages exit a short distance to
+    # either side (left parent to the left) so they read as two ancestors.
+    nodes_by_id = {nd.id: nd for nd in graph.nodes}
+    parents = {}
     for edge in graph.edges:
-        xc, xp = x[edge.child], x[edge.parent]
-        yc, yp = y[edge.child], y[edge.parent]
-        ax.plot([xc, xc, xp], [yc, yp, yp], color="0.6", lw=1.0, zorder=1)
+        parents.setdefault(edge.child, []).append(edge.parent)
+
+    for edge in graph.edges:
+        child, parent = edge.child, edge.parent
+        yc, yp, xp = y[child], y[parent], x[parent]
+        if nodes_by_id[child].type == "recombination" \
+                and len(parents[child]) == 2:
+            left, right = sorted(parents[child], key=lambda p: x[p])
+            xv = x[child] + (-fork if parent == left else fork)
+            # short jog out of the node, vertical up, then across to the parent
+            ax.plot([x[child], xv, xv, xp], [yc, yc, yp, yp],
+                    color="0.6", lw=1.0, zorder=1)
+        else:
+            xv = x[child]
+            ax.plot([xv, xv, xp], [yc, yp, yp], color="0.6", lw=1.0, zorder=1)
 
     styles = {"sample": ("o", "black"),
               "coalescence": ("o", "#1f77b4"),
