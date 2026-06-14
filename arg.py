@@ -69,6 +69,7 @@ Output formats
 """
 
 import argparse
+import os
 import random
 import sys
 from collections import namedtuple
@@ -517,34 +518,57 @@ def simplify_arg(graph):
         key = (edge.parent, edge.child)
         seg[key] = _coalesce_adjacent(sorted(seg.get(key, []) + list(edge.segments)))
 
-    def parents_of(v):
-        return {p for (p, c) in seg if c == v}
+    # Adjacency as sets, maintained incrementally so each splice is O(1).
+    parents = {v: set() for v in nodes}
+    children = {v: set() for v in nodes}
+    for p, c in seg:
+        children[p].add(c)
+        parents[c].add(p)
 
-    def children_of(v):
-        return {c for (p, c) in seg if p == v}
+    def is_degree2(v):
+        return (nodes[v].type != "sample"
+                and len(parents[v]) == 1 and len(children[v]) == 1)
 
-    changed = True
-    while changed:
-        changed = False
-        for v in list(alive):
-            if nodes[v].type == "sample":
-                continue
-            par, chi = parents_of(v), children_of(v)
-            if len(par) == 1 and len(chi) == 1:
-                p, c = next(iter(par)), next(iter(chi))
-                if p == c:
-                    continue
-                spliced = seg.get((v, c), [])
-                for key in [k for k in seg if v in k]:
-                    del seg[key]
-                seg[(p, c)] = _coalesce_adjacent(
-                    sorted(seg.get((p, c), []) + list(spliced)))
-                alive.discard(v)
-                changed = True
+    # Worklist of suppression candidates; only the spliced node's neighbours can
+    # newly become degree-2, so we re-enqueue just those after each splice.
+    work = [v for v in alive if is_degree2(v)]
+    while work:
+        v = work.pop()
+        if v not in alive or not is_degree2(v):
+            continue
+        p, c = next(iter(parents[v])), next(iter(children[v]))
+        if p == c:
+            continue
+        spliced = seg.pop((v, c))
+        del seg[(p, v)]
+        seg[(p, c)] = _coalesce_adjacent(
+            sorted(seg.get((p, c), []) + list(spliced)))
+        children[p].discard(v)
+        children[p].add(c)
+        parents[c].discard(v)
+        parents[c].add(p)
+        del parents[v], children[v]
+        alive.discard(v)
+        for u in (p, c):
+            if u in alive and is_degree2(u):
+                work.append(u)
 
     new_nodes = [nodes[v] for v in alive]
     new_edges = [ARGEdge(p, c, s) for (p, c), s in seg.items()]
     return ARGGraph(new_nodes, new_edges)
+
+
+def _replicate_path(template, rep, n_replicates):
+    """Per-replicate output path, inserting the index before the extension.
+
+    Uses os.path.splitext so dots in directory names are not mistaken for an
+    extension (e.g. 'out/v1.2/arg.png' -> 'out/v1.2/arg.0.png'). For a single
+    replicate the template is returned unchanged.
+    """
+    if n_replicates == 1:
+        return template
+    root, ext = os.path.splitext(template)
+    return f"{root}.{rep}{ext}"
 
 
 def main(argv=None):
@@ -614,12 +638,12 @@ def main(argv=None):
 
     if args.plot is not None:
         from viz import draw_arg
+        # matplotlib infers the image format from the extension, so default one.
+        plot_target = args.plot
+        if os.path.splitext(plot_target)[1] == "":
+            plot_target += ".png"
         for rep, (_nt, _ns, _edges, _events, graph) in enumerate(sims):
-            if args.replicates == 1:
-                path = args.plot
-            else:
-                base, dot, ext = args.plot.rpartition(".")
-                path = f"{base}.{rep}.{ext}" if dot else f"{args.plot}.{rep}"
+            path = _replicate_path(plot_target, rep, args.replicates)
             draw_arg(graph, mode=args.mode, save=path, simplify=args.simplify)
             sys.stdout.write(f"wrote {path}\n")
         return
@@ -655,11 +679,7 @@ def main(argv=None):
                 f"{ts.num_nodes} nodes, {ts.num_edges} edges, "
                 f"{ts.num_trees} tree(s), sequence_length={ts.sequence_length}\n")
         else:
-            if args.replicates == 1:
-                path = args.output
-            else:
-                base, dot, ext = args.output.rpartition(".")
-                path = f"{base}.{rep}.{ext}" if dot else f"{args.output}.{rep}"
+            path = _replicate_path(args.output, rep, args.replicates)
             ts.dump(path)
             sys.stdout.write(f"wrote {path}\n")
 
