@@ -1,0 +1,23 @@
+# Example reassorter config: default values applied when the corresponding
+# command-line argument is omitted. Arguments given on the command line always
+# override these. Keys are argument dest names (the long option with dashes
+# turned to underscores, e.g. --num-samples -> num_samples).
+#
+# Run with:  python3 arg.py --config config.example.toml
+# Override:  python3 arg.py --config config.example.toml -n 10 --rho 5e-6
+
+num_samples = 5         # -n
+Ne = 1000               # -Ne, effective population size
+ploidy = 1              # 1 = haploid, 2 = diploid
+mode = "hudson"         # "hudson" or "reassortment"
+
+# hudson-mode genome
+rho = 2e-6              # per-site, per-generation recombination rate
+genome_length = 1000    # -L
+
+# reassortment-mode genome (used when mode = "reassortment")
+# segments = 8
+# reassortment_rate = 1e-3
+# reassortment_bias = 0.5
+
+decimals = 6

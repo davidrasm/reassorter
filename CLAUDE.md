@@ -28,9 +28,13 @@ python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rat
 
 # Draw the ARG network to an image instead of writing trees (either mode)
 python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --plot arg.png
+
+# Take defaults from a TOML config; CLI arguments still override it
+python3 arg.py --config config.example.toml --seed 42
+python3 arg.py --config config.example.toml -n 10 --rho 5e-6   # CLI wins
 ```
 
-Both scripts take effective population size via `-Ne/--Ne`. Optional dependencies: `pip install tskit` (for `--format tskit`), `pip install matplotlib` (for `--plot`).
+Both scripts take effective population size via `-Ne/--Ne`. Optional dependencies: `pip install tskit` (for `--format tskit`), `pip install matplotlib` (for `--plot`). `arg.py --config` parses TOML via the stdlib `tomllib`, so it requires Python 3.11+.
 
 ## Architecture
 
@@ -95,3 +99,7 @@ edges  → squash_edges(edges)   # merge same parent/child across adjacent inter
 - Branch lengths = difference between parent and child `time`
 - RNG is passed explicitly (`rng` parameter) for reproducibility
 - `main` in each script is the argparse CLI entry point: replicates loop, output file management, optional tskit table building
+
+### arg.py `--config` (TOML defaults)
+
+`arg.py main` does a **two-phase parse**: `parse_known_args` pulls out `--config`, `_apply_config` loads the TOML and folds it in via `parser.set_defaults`, then `parse_args` runs. Precedence is `add_argument default < config file < CLI`. Because `set_defaults` cannot satisfy `required=True`, `-n/--num-samples` and `-Ne/--Ne` are *not* required at the argparse level (default `None`) and are checked for presence after parsing (so config can supply them). `set_defaults` also bypasses argparse's `type`/`choices` validation, so `_apply_config` validates keys against the parser's known dests and values against each action's `choices`. Config keys are dest names (e.g. `num_samples`, `genome_length`). See `config.example.toml`.

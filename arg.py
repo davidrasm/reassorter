@@ -72,6 +72,7 @@ import argparse
 import os
 import random
 import sys
+import tomllib
 from collections import namedtuple
 
 
@@ -571,14 +572,45 @@ def _replicate_path(template, rep, n_replicates):
     return f"{root}.{rep}{ext}"
 
 
+def _apply_config(parser, path):
+    """Load a TOML file of defaults and fold them into `parser`.
+
+    Keys must be argument dest names (the long option with dashes turned to
+    underscores, e.g. 'num_samples', 'genome_length', 'reassortment_rate').
+    Values are checked against each argument's `choices`, then applied via
+    set_defaults so explicit command-line arguments still take precedence.
+    """
+    try:
+        with open(path, "rb") as f:
+            config = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        parser.error(f"could not read config {path!r}: {exc}")
+
+    # set_defaults bypasses argparse's own type/choices checks, so validate the
+    # keys (and any constrained values) ourselves.
+    actions = {a.dest: a for a in parser._actions
+               if a.dest not in ("help", "config")}
+    for key, value in config.items():
+        action = actions.get(key)
+        if action is None:
+            parser.error(f"unknown config key {key!r}; valid keys: "
+                         + ", ".join(sorted(actions)))
+        if action.choices is not None and value not in action.choices:
+            parser.error(f"config {key!r}={value!r} is not one of "
+                         f"{tuple(action.choices)}")
+    parser.set_defaults(**config)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(
         description="Simulate ancestral recombination graphs (ARGs) under the "
                     "coalescent with recombination or reassortment.")
-    p.add_argument("-n", "--num-samples", type=int, required=True,
-                   help="number of sampled individuals")
-    p.add_argument("-Ne", "--Ne", type=float, required=True,
-                   help="effective population size (number of individuals)")
+    p.add_argument("-n", "--num-samples", type=int, default=None,
+                   help="number of sampled individuals "
+                        "(required via the command line or --config)")
+    p.add_argument("-Ne", "--Ne", type=float, default=None,
+                   help="effective population size in individuals "
+                        "(required via the command line or --config)")
     p.add_argument("--mode", choices=("hudson", "reassortment"),
                    default="hudson",
                    help="recombination model (default: hudson)")
@@ -612,8 +644,22 @@ def main(argv=None):
     p.add_argument("--no-simplify", dest="simplify", action="store_false",
                    help="[--plot] keep degree-2 nodes instead of simplifying "
                         "the ARG before drawing")
+    p.add_argument("--config", default=None,
+                   help="TOML file of default values; arguments given on the "
+                        "command line override it")
     p.set_defaults(simplify=True)
+
+    # Two-phase parse: read --config first and fold it in as defaults (so any
+    # explicit command-line argument still wins), then parse for real.
+    preliminary, _ = p.parse_known_args(argv)
+    if preliminary.config is not None:
+        _apply_config(p, preliminary.config)
     args = p.parse_args(argv)
+
+    if args.num_samples is None:
+        p.error("-n/--num-samples is required (via the command line or --config)")
+    if args.Ne is None:
+        p.error("-Ne/--Ne is required (via the command line or --config)")
 
     if args.mode == "hudson":
         if args.genome_length is None:
