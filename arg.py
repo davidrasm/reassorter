@@ -639,8 +639,9 @@ def main(argv=None):
     p.add_argument("-o", "--output", default="-",
                    help="output file ('-' for stdout, the default)")
     p.add_argument("--plot", default=None,
-                   help="draw the ARG network to this image file (e.g. arg.png) "
-                        "instead of writing trees")
+                   help="draw the ARG network to this image file instead of "
+                        "writing trees; the extension selects the format "
+                        "(e.g. arg.png, arg.pdf, arg.svg; defaults to .png)")
     p.add_argument("--no-simplify", dest="simplify", action="store_false",
                    help="[--plot] keep degree-2 nodes instead of simplifying "
                         "the ARG before drawing")

@@ -109,7 +109,8 @@ def draw_arg(graph, mode="hudson", ax=None, save=None, show=False,
     ax : matplotlib Axes, optional
         Draw into this axes instead of creating a new figure.
     save : str, optional
-        If given, write the figure to this path.
+        If given, write the figure to this path. matplotlib selects the format
+        from the extension, so '.png', '.pdf', '.svg', etc. all work.
     show : bool
         If True, call plt.show().
     label_recomb : bool

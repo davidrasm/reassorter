@@ -27,7 +27,9 @@ python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rat
 python3 arg.py -n 5 -Ne 1000 --mode reassortment --segments 8 --reassortment-rate 1e-3 --reassortment-bias 0.8
 
 # Draw the ARG network to an image instead of writing trees (either mode)
+# The --plot extension selects the format (png/pdf/svg/...; defaults to .png)
 python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --plot arg.png
+python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --plot arg.pdf
 
 # Take defaults from a TOML config; CLI arguments still override it
 python3 arg.py --config config.example.toml --seed 42
