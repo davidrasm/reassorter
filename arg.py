@@ -66,6 +66,10 @@ Output formats
   sharing the same tree are merged).
 * tskit TreeSequence: the node and edge tables are combined into a
   TreeSequence spanning [0, L). Requires the `tskit` package.
+* Extended Newick (reassortment mode only): the whole network as one NEXUS
+  tree, with each branch annotated by the segments it carries. Reassortment
+  nodes appear twice, as `(child)#Hk` and as a `#Hk` stub under their other
+  parent. Drawn by `plot_reassortment_net.py`.
 """
 
 import argparse
@@ -559,6 +563,105 @@ def simplify_arg(graph):
     return ARGGraph(new_nodes, new_edges)
 
 
+def _segment_set(segments):
+    """Unit-segment indices covered by a list of (left, right, node_id) triples."""
+    indices = set()
+    for left, right, _ in segments:
+        indices.update(range(int(round(left)), int(round(right))))
+    return indices
+
+
+def to_extended_newick(graph, decimals=6):
+    """Render an ARGGraph as extended Newick annotated with carried segments.
+
+    This is the CoalRe/baltic flavour of extended Newick that
+    `plot_reassortment_net.py` draws. Every branch carries an
+    `[&segments={i, j, ...}]` annotation naming the segments it transmits, so a
+    lineage can be drawn as one coloured band per segment. The annotation
+    describes the branch *above* a node, which is why the root's is empty:
+    nothing above the root is ancestral to the sample.
+
+    A reassortment node has two parents, so it appears twice -- once as
+    `(child)#Hk[...]`, once as a bare `#Hk[...]` stub under its other parent --
+    and the two annotations partition the segments its child carried. Of the two
+    parents the one inheriting *more* segments gets the subtree, so the
+    reticulation drawn across the network is the minority set making the jump.
+    Choosing one parent edge per node this way spans the whole graph: following
+    those edges upward strictly increases time, so every node reaches a root.
+
+    Only meaningful in reassortment mode, where segment boundaries are integers.
+    """
+    nodes = {node.id: node for node in graph.nodes}
+    below = {v: [] for v in nodes}   # node -> indices of the edges to its children
+    above = {v: [] for v in nodes}   # node -> indices of the edges to its parents
+    for index, edge in enumerate(graph.edges):
+        below[edge.parent].append(index)
+        above[edge.child].append(index)
+
+    roots = sorted(v for v in nodes if not above[v])
+    if len(roots) == 1 and nodes[roots[0]].type == "sample":
+        raise ValueError("extended Newick output needs at least two samples")
+
+    # The subtree-bearing parent edge of each node; ties broken on parent id so
+    # the output is reproducible for a given seed.
+    primary = {
+        v: max(parents, key=lambda i: (len(_segment_set(graph.edges[i].segments)),
+                                       -graph.edges[i].parent))
+        for v, parents in above.items() if parents
+    }
+    hybrid = {v: f"#H{i}" for i, v in
+              enumerate(sorted(v for v in nodes if len(above[v]) > 1))}
+
+    nothing = "[&segments={}]"   # a branch ancestral to none of the sample
+
+    def annotate(index):
+        edge = graph.edges[index]
+        carried = ", ".join(str(s) for s in sorted(_segment_set(edge.segments)))
+        length = nodes[edge.parent].time - nodes[edge.child].time
+        return f"[&segments={{{carried}}}]:{length:.{decimals}f}"
+
+    def render(v):
+        if nodes[v].type == "sample":
+            return f"n{v + 1}"
+        parts = []
+        for index in below[v]:
+            child = graph.edges[index].child
+            body = render(child) if primary[child] == index else hybrid[child]
+            parts.append(body + annotate(index))
+        inner = "(" + ",".join(parts) + ")"
+        return inner + hybrid[v] if v in hybrid else inner
+
+    if len(roots) == 1:
+        return render(roots[0]) + nothing + ":0.0;"
+
+    """
+        Segments are dropped once they reach their MRCA rather than climbing
+        further, so lineages left carrying disjoint segments stop interacting
+        and the ARG can finish as a *forest* -- one root per group of segments
+        that coalesced among themselves. Join those roots under a stub so the
+        network is still one Newick tree. Nothing above a root is ancestral to
+        the sample, so every root branch carries no segments, exactly like the
+        stub itself, and no band is drawn along the join.
+    """
+    top = max(nodes[v].time for v in roots)
+    joined = ",".join(f"{render(v)}{nothing}:{top - nodes[v].time:.{decimals}f}"
+                      for v in roots)
+    return "(" + joined + ")" + nothing + ":0.0;"
+
+
+def to_nexus(trees, first=0):
+    """Wrap extended-Newick strings in a NEXUS trees block.
+
+    Each tree goes on one line named `tree STATE_<i>`, the shape baltic's
+    `loadNexus` looks for. Note that it keeps only the *last* tree in a file, so
+    replicates are better written one per file.
+    """
+    lines = ["#nexus", "Begin trees;"]
+    lines += [f"tree STATE_{first + i} = {tree}" for i, tree in enumerate(trees)]
+    lines.append("End;")
+    return "\n".join(lines) + "\n"
+
+
 def _replicate_path(template, rep, n_replicates):
     """Per-replicate output path, inserting the index before the extension.
 
@@ -626,8 +729,12 @@ def main(argv=None):
                    help="[reassortment] P(segment -> first parent), default 0.5")
     p.add_argument("--ploidy", type=int, default=1, choices=(1, 2),
                    help="1 = haploid (default), 2 = diploid")
-    p.add_argument("--format", choices=("newick", "tskit"), default="newick",
-                   help="output format (default: newick)")
+    p.add_argument("--format",
+                   choices=("newick", "tskit", "extended-newick"),
+                   default="newick",
+                   help="output format (default: newick); extended-newick "
+                        "writes the whole network as an annotated NEXUS tree "
+                        "and requires --mode reassortment")
     p.add_argument("-r", "--replicates", type=int, default=1,
                    help="number of independent ARGs to simulate (default: 1)")
     p.add_argument("--seed", type=int, default=None,
@@ -643,8 +750,8 @@ def main(argv=None):
                         "writing trees; the extension selects the format "
                         "(e.g. arg.png, arg.pdf, arg.svg; defaults to .png)")
     p.add_argument("--no-simplify", dest="simplify", action="store_false",
-                   help="[--plot] keep degree-2 nodes instead of simplifying "
-                        "the ARG before drawing")
+                   help="[--plot, --format extended-newick] keep degree-2 "
+                        "nodes instead of simplifying the ARG first")
     p.add_argument("--config", default=None,
                    help="TOML file of default values; arguments given on the "
                         "command line override it")
@@ -673,7 +780,13 @@ def main(argv=None):
             p.error("--segments must be >= 1")
         genome_length = float(args.segments)
 
-    record_graph = args.plot is not None
+    if args.format == "extended-newick":
+        if args.mode != "reassortment":
+            p.error("--format extended-newick requires --mode reassortment")
+        if args.num_samples < 2:
+            p.error("--format extended-newick requires at least 2 samples")
+
+    record_graph = args.plot is not None or args.format == "extended-newick"
     rng = random.Random(args.seed)
     sims = [simulate_arg(args.num_samples, args.Ne, genome_length,
                          ploidy=args.ploidy, rng=rng, mode=args.mode,
@@ -693,6 +806,21 @@ def main(argv=None):
             path = _replicate_path(plot_target, rep, args.replicates)
             draw_arg(graph, mode=args.mode, save=path, simplify=args.simplify)
             sys.stdout.write(f"wrote {path}\n")
+        return
+
+    if args.format == "extended-newick":
+        for rep, (_nt, _ns, _edges, _events, graph) in enumerate(sims):
+            if args.simplify:
+                graph = simplify_arg(graph)
+            block = to_nexus([to_extended_newick(graph, decimals=args.decimals)],
+                             first=rep)
+            if args.output == "-":
+                sys.stdout.write(block)
+            else:
+                path = _replicate_path(args.output, rep, args.replicates)
+                with open(path, "w") as fh:
+                    fh.write(block)
+                sys.stdout.write(f"wrote {path}\n")
         return
 
     event_label = "recombination" if args.mode == "hudson" else "reassortment"

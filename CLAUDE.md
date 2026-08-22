@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`coalescent.py`** — Kingman coalescent: simulates a single backward-time genealogy (one tree).
 - **`arg.py`** — coalescent *with recombination*: simulates an ancestral recombination graph (ARG) and emits its local/marginal trees. Two interchangeable models via `--mode`: `hudson` (continuous genome, arbitrary breakpoints) and `reassortment` (segmented genome, whole-segment swapping, as in influenza).
 - **`viz.py`** — matplotlib drawing of an ARG as a phylogenetic network (sample / coalescence / recombination nodes, time on the y-axis). Consumes the optional `ARGGraph` from `arg.py`; only imported when plotting.
+- **`plot_reassortment_net.py`** — separate, heavier drawing of a *reassortment* network as a "subway map": each lineage is one parallel coloured band per segment it carries. Reads extended Newick (NEXUS) via the `baltic` package rather than any `arg.py` data structure, so it draws CoalRe summary networks and simulated ARGs alike.
 
 `arg.py` started as a copy of `coalescent.py` and shares its conventions (Ne, ploidy, RNG, output formats), so keep terminology and CLI flags consistent across the two when editing.
 
@@ -34,9 +35,14 @@ python3 arg.py -n 5 -Ne 1000 --rho 2e-6 -L 1000 --plot arg.pdf
 # Take defaults from a TOML config; CLI arguments still override it
 python3 arg.py --config config.example.toml --seed 42
 python3 arg.py --config config.example.toml -n 10 --rho 5e-6   # CLI wins
+
+# Extended Newick (reassortment mode only), then draw it as a segment subway map
+python3 arg.py -n 8 -Ne 1000 --mode reassortment --segments 8 \
+    --reassortment-rate 1e-3 --format extended-newick -o arg.tree
+python3 plot_reassortment_net.py arg.tree -o arg-network.png
 ```
 
-Both scripts take effective population size via `-Ne/--Ne`. Optional dependencies: `pip install tskit` (for `--format tskit`), `pip install matplotlib` (for `--plot`). `arg.py --config` parses TOML via the stdlib `tomllib`, so it requires Python 3.11+.
+Both scripts take effective population size via `-Ne/--Ne`. Optional dependencies: `pip install tskit` (for `--format tskit`), `pip install matplotlib` (for `--plot`). `arg.py --config` parses TOML via the stdlib `tomllib`, so it requires Python 3.11+. `plot_reassortment_net.py` additionally needs `baltic`, which is **not** in the system Python — it lives in the `baltic` conda env (`conda run -n baltic python plot_reassortment_net.py ...`).
 
 ## Architecture
 
@@ -84,13 +90,31 @@ edges  → squash_edges(edges)   # merge same parent/child across adjacent inter
   - `mode="reassortment"`: per-lineage rate is a constant `reassortment_rate` (0 unless the lineage carries ≥2 segments); `_reassort_split` sends each integer-aligned unit segment to one of two parents independently with prob `reassortment_bias`. Genome `L` is the segment count `K`. Events where all segments land on one parent are model-faithful no-ops (skipped, not recorded).
 - `marginal_trees`: derives local trees per genomic interval from the edge table without tskit; merges adjacent intervals with identical topology.
 
-**Explicit ARG graph (`record_graph=True`)**: the default succinct/tskit `edges` output has *no* recombination nodes and discards event times, so it can't draw a network. Passing `record_graph=True` to `simulate_arg` additionally builds an `ARGGraph` (namedtuples `ARGNode`/`ARGEdge`) with explicit sample, coalescence, and recombination nodes. The loop tracks `lineage_node[i]` (the graph node at the bottom of `pool[i]`'s current upward stretch) in lockstep with `pool`; each `ARGEdge` carries the ancestral segments it transmits, so a future per-lineage segment overlay needs no new bookkeeping. Node degrees: coalescence = 2 children/1 parent, recombination = 1 child/2 parents. Graph node ids are a separate id space from the tskit node ids, leaving the succinct output untouched.
+**Explicit ARG graph (`record_graph=True`)**: the default succinct/tskit `edges` output has *no* recombination nodes and discards event times, so it can't draw a network. Passing `record_graph=True` to `simulate_arg` additionally builds an `ARGGraph` (namedtuples `ARGNode`/`ARGEdge`) with explicit sample, coalescence, and recombination nodes. The loop tracks `lineage_node[i]` (the graph node at the bottom of `pool[i]`'s current upward stretch) in lockstep with `pool`; each `ARGEdge` carries the ancestral segments it transmits, which is what the extended-Newick writer annotates branches with. Node degrees: coalescence = 2 children/1 parent, recombination = 1 child/2 parents. Graph node ids are a separate id space from the tskit node ids, leaving the succinct output untouched.
 
-**`simplify_arg(graph)`**: returns a copy with degree-2 nodes (one distinct parent + one distinct child) suppressed, splicing their two edges into one, iterated to a fixpoint. This collapses redundant "bubbles" — a recombination immediately undone by its two recombinant lineages re-coalescing, which appears as a recombination and coalescence node joined by a parallel edge pair and contributes nothing to any genealogy. Used by `viz.draw_arg(..., simplify=True)` (default) and toggled by the `--plot ... --no-simplify` CLI flag.
+**Extended Newick (`--format extended-newick`, reassortment mode only)**: `to_extended_newick(graph)` renders the `ARGGraph` in the CoalRe/baltic flavour of extended Newick, wrapped in a NEXUS block by `to_nexus`. Three things drive the design, all verified against baltic's `make_tree` parser:
+
+- A branch's `[&segments={i, j, ...}]` annotation describes the branch *above* the node it is written on, which is why every root's annotation is empty — nothing above a root is ancestral to the sample.
+- A reassortment node has two parents, so it appears twice: `(child)#Hk[...]` under one and a bare `#Hk[...]` stub under the other, the two annotations partitioning its child's segments. The parent inheriting *more* segments gets the subtree, so the reticulation drawn across the network is the minority set making the jump (this matches CoalRe's own output). Picking one such "primary" parent edge per node spans the graph: following them upward strictly increases time, so every node reaches a root.
+- **The ARG is a forest, not a tree.** Segments are dropped once they reach their MRCA, so lineages left carrying disjoint segments stop interacting and each group finishes at its own root. (This needs ≥4 lineages in the pool; with 3 a merge can never empty.) Multiple roots are joined under a stub node carrying no segments, so the join draws no band.
+
+Node ids are reused as tip names (`n<i+1>`), matching `--format newick`, since sample graph ids are `0..n-1`.
+
+**`simplify_arg(graph)`**: returns a copy with degree-2 nodes (one distinct parent + one distinct child) suppressed, splicing their two edges into one, iterated to a fixpoint. This collapses redundant "bubbles" — a recombination immediately undone by its two recombinant lineages re-coalescing, which appears as a recombination and coalescence node joined by a parallel edge pair and contributes nothing to any genealogy. Used by `viz.draw_arg(..., simplify=True)` (default) and applied to `--format extended-newick` as well; `--no-simplify` turns it off for both.
 
 ### viz.py
 
 `draw_arg(graph, ...)` renders the `ARGGraph` with matplotlib in a rectangular phylogram style: lineages are vertical segments with a horizontal jog to the ancestor at its time. `_layout` assigns y = node time and x from a **spanning tree** of the ARG (each node claimed by the first parent reaching it in a downward DFS; leaves get in-order slots, internal nodes the mean of their tree children). Ordering leaves by topology gives every subtree a contiguous x-interval, so backbone horizontals never cross a vertical; only reticulation edges (a recombination node's second parent) can cross, which is unavoidable for an ARG. The two parental lineages leaving a recombination node fork left/right (by `fork`, the left parent to the left) so they read as two ancestors. Circles for sample/coalescence, squares for recombination annotated with breakpoint (hudson) or segment routing (reassortment). matplotlib is imported lazily. Legible only for small ARGs.
+
+### plot_reassortment_net.py
+
+An argparse CLI over `baltic`, independent of `arg.py`'s data structures — it only needs `[&segments={...}]` on each branch, so it draws CoalRe summary networks (dated tips, posterior support) and simulated ARGs (tips at t=0, no posteriors) from the same code path. Points that are easy to break when editing:
+
+- **Lane geometry is the secondary encoding.** Each segment rides at a constant offset in *points*, so an absent segment leaves a gap rather than closing it, and only consecutive lanes ever touch. That is what makes `SEGMENT_COLOURS` (the first eight slots of a CVD-validated categorical palette) legal here: it passes the adjacent-pair checks on a light surface but not the all-pairs ones. Past eight there is no ninth separable hue — draw a subset with `--segment-order` instead of adding one.
+- **A reassortment is one instant on two paths.** The reticulation and the node it lands on must share a time, or jump edges tilt and the lineage-through-time counts (which key on rounded times) break. Newick's decimal text makes the two paths round differently, so they are snapped together right after loading, before anything else.
+- Missing `posterior` reads as 1.0, which switches off the support-related decorations rather than erroring; the negative-branch-length fixed-point correction only runs on summary networks that actually have them.
+- Margin sizes are fractions of the time span, not fixed units, so the same layout works over decades or thousands of generations.
+- `--segment-order` doubles as CoalRe's alphabetical-to-biological remap: TSWV needs `--segment-order 2 1 0 --segment-names S M L`.
 
 ### Key Conventions (both scripts)
 
