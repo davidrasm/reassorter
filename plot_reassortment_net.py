@@ -406,36 +406,54 @@ def main(argv=None):
         for k in ll.Objects:
             if isinstance(k, bt.reticulation):
                 continue  # reassorting branches are drawn dashed further down
-            if s not in carried(k):
-                continue  # this lineage does not carry this segment
+
+            """
+                The branch above a node and the bar below it are decided
+                separately, because a node can need one without the other. A
+                segment is dropped from a lineage once it has reached its MRCA,
+                so the branch above that last coalescence does not carry it (and
+                the root branch carries nothing at all) -- but the coalescence
+                itself still has to be drawn, or the segment's two final lineages
+                run to the same time and stop, appearing never to meet.
+            """
+            here = s in carried(k)
+            below = [c.y for c in k.children if s in carried(c)] if k.is_node() else []
+            if not here and len(below) < 2:
+                continue  # this segment neither passes through here nor coalesces here
+
             x = k.absoluteTime
-            xp = k.parent.absoluteTime if k.parent else x
             y = k.y
 
-            end = x
-            if args.flush_tips and isinstance(k, bt.leaf):
-                """
-                    Every lane is shifted sideways by its own offset, which
-                    leaves the lanes of a tip branch ending a few points apart.
-                    Pull the endpoint back by exactly that offset so the lane's
-                    own shift carries it to the sampling time and the tip squares
-                    off. Only the far end moves; the near end keeps its offset
-                    and stays joined to the vertical bar above it.
-                """
-                end = x - lane_offset[s] * tip_pullback
+            if here:
+                xp = k.parent.absoluteTime if k.parent else x
 
-            lines.append(((xp, y), (end, y)))  # horizontal branch
+                end = x
+                if args.flush_tips and isinstance(k, bt.leaf):
+                    """
+                        Every lane is shifted sideways by its own offset, which
+                        leaves the lanes of a tip branch ending a few points
+                        apart. Pull the endpoint back by exactly that offset so
+                        the lane's own shift carries it to the sampling time and
+                        the tip squares off. Only the far end moves; the near end
+                        keeps its offset and stays joined to the vertical bar
+                        above it.
+                    """
+                    end = x - lane_offset[s] * tip_pullback
 
-            if k.is_node():  # vertical bar joining this branch to its descendants
+                lines.append(((xp, y), (end, y)))  # horizontal branch
+
+            if below:  # vertical bar joining this node to its descendants
                 """
                     Only span children that actually carry this segment -- at a
                     reassortment the other child inherits a disjoint set, and a
                     bar drawn to children[0]..children[-1] (what baltic's
                     plotTree does) would run a band into a lineage that never
-                    carries it. Including the node's own y keeps the bar attached
-                    when every carrying child lies to one side.
+                    carries it. The node's own y joins in only when the segment
+                    continues above, which keeps the bar attached when every
+                    carrying child lies to one side; at an MRCA there is nothing
+                    above to attach to and the bar just spans the two children.
                 """
-                ys = [y] + [c.y for c in k.children if s in carried(c)]
+                ys = below + ([y] if here else [])
                 if len(ys) > 1:
                     lines.append(((x, min(ys)), (x, max(ys))))
 
