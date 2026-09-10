@@ -56,7 +56,7 @@ class SCAR(object):
             Note: ts, M, Ne, genome_length need to be passed through optimizer as a tuple
             
             Parameters:
-                reassortment_rate (float): reassortment rate per lineage per site
+                reassortment_rate (float): reassortment rate per lineage per segment
                 table_nodes (string): path to CSV containing ARG nodes
                 table_edges (string): path to CSV containg ARG edges
 
@@ -65,11 +65,9 @@ class SCAR(object):
     
         # Hard-coding number of pops as 1
         pops = 1
-        #if pops == 0: # we never assigned populations
-        #    pops = 1
-        #samples = ts.num_samples
-        #states = [st.id for st in ts.populations()]
-        
+        if pops == 0: # we never assigned populations
+            pops = 1
+
         # Get transition rate matrix
         Q = self.M - np.diag(np.sum(self.M,axis=1)) # set diagonals to negative row sums
 
@@ -91,7 +89,7 @@ class SCAR(object):
         # Iterate through each event in ARG nodes working backwards through time
         for i in np.arange(0,len(nodes_df)):
             
-            # Get time of event and time of next event"
+            # Get time of event and time of next event
             event_time = nodes_df.time[i]
             if (i+1 < len(nodes_df)): # if not at final event
                 next_time = nodes_df.time[i+1]
@@ -106,7 +104,7 @@ class SCAR(object):
             if nodes_df.type[i] == 'coalescence':
                 event_type = 'coalescent'
             if nodes_df.type[i] == 'recombination':
-                event_type = 'recombination'
+                event_type = 'recombination' # reassortment, kept as 'recombination' to match node type label
             #if event.flags == 262144:
             #    event_type = 'hidden_coalescent'
             #if event.flags == 524288:
@@ -139,7 +137,6 @@ class SCAR(object):
                 # Get uniique children b/c the same parent/child edge may occur more than once in the tree series if not in contiguous local trees
                 coal_children = np.unique(coal_children)
                 
-
                 # Find coal_children in active_lines
                 coal_children = [x for x in coal_children if x in active_lines]
                 child_indexes = [active_lines.index(x) for x in coal_children]
@@ -153,11 +150,11 @@ class SCAR(object):
                 event_prob = lambda_sum
                 
                 # Compute new parent state probs
-                if self.known_ancestral_states:
-                    parent_probs = np.zeros(pops)
-                    parent_probs[event.population] = 1.0
-                else:
-                    parent_probs = coal_probs / lambda_sum # renormalize probs
+                #if self.known_ancestral_states:
+                #    parent_probs = np.zeros(pops)
+                #    parent_probs[event.population] = 1.0
+                #else:
+                parent_probs = coal_probs / lambda_sum # renormalize probs
                     
                 # Update lineage arrays - overwriting child1 with parent
                 active_lines[child_indexes[0]] = i # name of parent
@@ -204,12 +201,13 @@ class SCAR(object):
             
             if 'recombination' == event_type:
                 
-                # Find which currently-active lineage (by its OLD id) is passing through this event
+                # Find child of parent node 
                 child = children[parents == i]
                 child = np.unique(child)
                 assert len(child) == 1
                 child = child[0]
-                
+
+                # Remember that child may have already been removed from active_lines
                 if child in active_lines:
                     
                     # Node i's OWN parents are what this event splits into
@@ -230,18 +228,28 @@ class SCAR(object):
                             f"Node {i}: expected 1 or 2 parents, got {len(recomb_parents)}"
                         
                         left_parent, right_parent = recomb_parents[0], recomb_parents[1]
-                        
+        
                         links = active_segments[child_idx]  # segment count of the pre-split lineage
                         event_prob = reassortment_rate * (1 - (0.5)**(links - 1))
                         
                         parent_probs = line_state_probs[child_idx]
                         
-                        active_lines[child_idx] = left_parent
-                        active_segments[child_idx] = self._get_line_segment_count(left_parent, children, segments)
+                        # Isolate each branch's own edge (parent == left/right_parent, child == i)
+                        left_mask = (parents == left_parent)
+                        right_mask = (parents == right_parent)
+                        
+                        # Relabel BOTH branches with i (this node's own id) - matches the
+                        # convention used elsewhere so future lookups via children[parents == <future_node>] find them correctly
+                        active_lines[child_idx] = i
+                        active_segments[child_idx] = self._get_line_segment_count(
+                            i, children[left_mask], segments[left_mask]
+                        )
                         line_state_probs[child_idx] = parent_probs
                         
-                        active_lines.append(right_parent)
-                        active_segments.append(self._get_line_segment_count(right_parent, children, segments))
+                        active_lines.append(i)
+                        active_segments.append(self._get_line_segment_count(
+                            i, children[right_mask], segments[right_mask]
+                        ))
                         line_state_probs.append(parent_probs)
             
             #if 'migration' == event_type:
@@ -283,28 +291,30 @@ class SCAR(object):
                     prob_no_coal = np.exp(-np.sum(lambdas)*t_elapsed)
                 
                     # Compute prob of no migration over the time interval
-                    sam = 0
-                    for i in range(pops):
-                        for z in range(pops):
-                            sam += (A[i])*(self.M[i][z])
-                    prob_no_mig = np.exp(-sam*t_elapsed)
+                    #sam = 0
+                    #for i in range(pops):
+                    #    for z in range(pops):
+                    #        sam += (A[i])*(self.M[i][z])
+                    #prob_no_mig = np.exp(-sam*t_elapsed)
                     
-                    # Compute prob of no recombination event over the time interval
-                    # Links are computed per population b/c we are assuming recombination can only happen in same pop
-                    line_prod = np.array(line_state_probs) * np.array(active_segments)[:, np.newaxis]
-                    sum_links = np.sum(np.sum(line_prod))
-                              
-                    prob_no_recomb = np.exp(-sum_links * reassortment_rate * t_elapsed) # assumes reassortment rate is constant across pops
-                    
+                    n_segments = np.array(active_segments)
+                    assert np.all(n_segments >= 1), "every active lineage should carry at least one segment"
+                    obs_prob = 1 - (0.5)**(n_segments - 1)   # <-- the -1 is right here, in the exponent
+
+                    line_prod = np.array(line_state_probs) * obs_prob[:, np.newaxis]
+                    sum_rate = np.sum(line_prod)   # this is R, summed over all active lineages
+
+                    prob_no_reassort = np.exp(-sum_rate * reassortment_rate * t_elapsed)
+
                 else: # Unknown ancestral lineage states
                 
                     # Integrate lineage prob equations backwards
                     dt_times = list(np.arange(event_time,next_time,self.dt_step)) # integration steps going backwards in time
-                    for idx,tx in enumerate(dt_times):
+                    for dt_idx,tx in enumerate(dt_times):
                         
                         # Get time step
-                        if (idx+1 < len(dt_times)):
-                            dt = dt_times[idx+1] - tx # integration time step
+                        if (dt_idx+1 < len(dt_times)):
+                            dt = dt_times[dt_idx+1] - tx # integration time step
                         else:
                             dt = next_time - tx
     
@@ -326,17 +336,22 @@ class SCAR(object):
                         prob_no_coal *= np.exp(-np.sum(lambdas)*dt)
                         
                         # Compute prob of no migration over the time interal"
-                        prob_no_mig = 1.0
+                        #prob_no_mig = 1.0
                         
                         # Compute prob of no recombination event over the time interval
                         # Links are computed per population b/c we are assuming recombination can only happen in same pop
-                        line_prod = np.array(line_state_probs) * np.array(active_segments)[:, np.newaxis]
-                        sum_links = np.sum(np.sum(line_prod))
-                                            
-                        prob_no_recomb *= np.exp(-sum_links * reassortment_rate * dt)
-            
-            log_like += np.log(event_prob) + np.log(prob_no_coal) + np.log(prob_no_mig) + np.log(prob_no_recomb)
-            
+                        n_segments = np.array(active_segments)
+                        assert np.all(n_segments >= 1), "every active lineage should carry at least one segment"
+                        obs_prob = 1 - (0.5)**(n_segments - 1)   # <-- the -1 is right here, in the exponent
+    
+                        line_prod = np.array(line_state_probs) * obs_prob[:, np.newaxis]
+                        sum_rate = np.sum(line_prod)   # this is R, summed over all active lineages
+    
+                        prob_no_reassort *= np.exp(-sum_rate * reassortment_rate * dt)
+
+            #log_like += np.log(event_prob) + np.log(prob_no_coal) + np.log(prob_no_mig) + np.log(prob_no_recomb)
+            log_like += np.log(event_prob) + np.log(prob_no_coal) + np.log(prob_no_reassort)
+
         return -log_like
 
 
@@ -354,40 +369,41 @@ class SCAR(object):
             all_segs.update(seg_list)
         return len(all_segs)  
     
-    def opt_MLE(self,ts):
-        
+    def opt_MLE(self, table_nodes, table_edges):
+
         """
             Find MLE of single parameter (assumed to be reassortment_rate) using numerical optimization.
             TODO: Generalize to allow for other demographic parameters to be estimataed.
         """
-        
+
         # Optimize likelihood by minimizing negative log likelihood
-        res = minimize_scalar(self.compute_neg_log_like, args=(ts), bounds=self.bounds, method='bounded')
+        res = minimize_scalar(self.compute_neg_log_like, args=(table_nodes, table_edges), bounds=self.bounds, method='bounded')
         mle = res.x
-    
+        
         return mle
 
 if __name__ == '__main__':
        
-    from Espalier.sim import ARGSimulator
+    #from Espalier.sim import ARGSimulator
     
     # Specify sim params
     samples = 10
     genome_length = 3
     reassortment_rate = 0.01 # NEED TO SET; reassortment rate per lineage per site
-    Ne = 1.0  # effective pop sizes
+    Ne = 100.0  # effective pop sizes
     #M = [[0.0,0.25],[0.25,0.0]]  # migration rate matrix
     M = [[0]]
     
-    # Run sim
-    ts # NEED TO PROVIDE AS INPUT
+    # Simulation was already run using 20260903_BTB_arg.py
+    table_nodes = "arg_w_tables.trees.nodes.csv"
+    table_edges = "arg_w_tables.trees.edges.csv"
 
     # Initialize SCAR model class
     bounds = (0.0,0.1)
     scar_model = SCAR(reassortment_rate,M,Ne,genome_length,bounds=bounds)
     
     # Check numerical optimization for MLE of single param
-    mle = scar_model.opt_MLE(ts)
+    mle = scar_model.opt_MLE(table_nodes, table_edges)
     print(mle)
     
     # Check likelihood is valid
