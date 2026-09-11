@@ -26,7 +26,7 @@ class SCAR(object):
         
         '''             
             Parameters: 
-                reassortment_rate (float): reassortment rate per lineage per site
+                reassortment_rate (float): reassortment rate per lineage per segment
                 M (2D list/array): migration rates (forward-time) between subpopulations 
                 Ne (1D list/array): effective population size of each subpopulation
                 genome_length (int): The number of segments K, with unit segments [0,1), ..., [K-1, K).
@@ -72,6 +72,7 @@ class SCAR(object):
         Q = self.M - np.diag(np.sum(self.M,axis=1)) # set diagonals to negative row sums
 
         # Read in tables of nodes and edges for ARG
+        # The node id must equal its row position after sorting by time ascending (as is the default for tree sequence object)
         nodes_df = pd.read_csv(table_nodes)
         edges_df = pd.read_csv(table_edges)
         
@@ -97,7 +98,7 @@ class SCAR(object):
                 next_time = nodes_df.time[i]
             t_elapsed = next_time - event_time # time elapsed between events
 
-            # Determine event type from tskit event.flags
+            # Determine event type from nodes_df.type 
             event_type = None
             if nodes_df.type[i] == 'sample':
                 event_type = 'sample'
@@ -121,6 +122,7 @@ class SCAR(object):
                 
                 # Add sampled lineage
                 active_lines.append(i)
+                # Calculate how many ancestral segments the active lineage carries
                 active_segments.append(self._get_line_segment_count(i,children,segments))
                 state_probs = np.zeros(pops)
                 #if event.population == -1: # we never assigned populations
@@ -210,14 +212,15 @@ class SCAR(object):
                 # Remember that child may have already been removed from active_lines
                 if child in active_lines:
                     
-                    # Node i's OWN parents are what this event splits into
+                    # Node i's two parents are what this event splits into
                     recomb_parents = parents[children == i]
                     recomb_parents = np.unique(recomb_parents)
                     
                     child_idx = active_lines.index(child)
                     
                     if len(recomb_parents) == 1:
-                        # genuinely unobservable - all segments went to the same parent
+                        # All segments went to the same parent by chance, so reassortment is unobservable
+                        # This does not contribute to the likelihood
                         parent = recomb_parents[0]
                         active_lines[child_idx] = parent
                         active_segments[child_idx] = self._get_line_segment_count(parent, children, segments)
@@ -226,7 +229,9 @@ class SCAR(object):
                     else:
                         assert len(recomb_parents) == 2, \
                             f"Node {i}: expected 1 or 2 parents, got {len(recomb_parents)}"
-                        
+                        # If there are two parents, this is a detectable reassortment event
+                        # This does contribute to the likelihood 
+
                         left_parent, right_parent = recomb_parents[0], recomb_parents[1]
         
                         links = active_segments[child_idx]  # segment count of the pre-split lineage
@@ -234,12 +239,12 @@ class SCAR(object):
                         
                         parent_probs = line_state_probs[child_idx]
                         
-                        # Isolate each branch's own edge (parent == left/right_parent, child == i)
+                        # Isolate each branch's own edge so you can track which segments correspond to a lineage
                         left_mask = (parents == left_parent)
                         right_mask = (parents == right_parent)
                         
-                        # Relabel BOTH branches with i (this node's own id) - matches the
-                        # convention used elsewhere so future lookups via children[parents == <future_node>] find them correctly
+                        # Relabel both branches with i (this node's own id) - matches the
+                        # convention used by the coalescent block
                         active_lines[child_idx] = i
                         active_segments[child_idx] = self._get_line_segment_count(
                             i, children[left_mask], segments[left_mask]
@@ -297,13 +302,18 @@ class SCAR(object):
                     #        sam += (A[i])*(self.M[i][z])
                     #prob_no_mig = np.exp(-sam*t_elapsed)
                     
+                    # Compute prob of no reassortment event over the time interval
                     n_segments = np.array(active_segments)
-                    assert np.all(n_segments >= 1), "every active lineage should carry at least one segment"
-                    obs_prob = 1 - (0.5)**(n_segments - 1)   # <-- the -1 is right here, in the exponent
+                    # Compute, for every active lineage, the probability that a reassortment event would be observable
+                    obs_prob = 1 - (0.5)**(n_segments - 1) 
 
+                    # If pops = 1, this just results in each lineage's obs_prob in a single-column array
                     line_prod = np.array(line_state_probs) * obs_prob[:, np.newaxis]
-                    sum_rate = np.sum(line_prod)   # this is R, summed over all active lineages
 
+                    # Summing the reassortment rate across all currently active lineages
+                    sum_rate = np.sum(line_prod)  
+
+                    # Scales segment-weighted lineage count by actual per-lineage-per-segment rate parameter
                     prob_no_reassort = np.exp(-sum_rate * reassortment_rate * t_elapsed)
 
                 else: # Unknown ancestral lineage states
@@ -338,14 +348,14 @@ class SCAR(object):
                         # Compute prob of no migration over the time interal"
                         #prob_no_mig = 1.0
                         
-                        # Compute prob of no recombination event over the time interval
-                        # Links are computed per population b/c we are assuming recombination can only happen in same pop
+                        # Compute prob of no reassortment event over the time interval
                         n_segments = np.array(active_segments)
-                        assert np.all(n_segments >= 1), "every active lineage should carry at least one segment"
-                        obs_prob = 1 - (0.5)**(n_segments - 1)   # <-- the -1 is right here, in the exponent
+                        obs_prob = 1 - (0.5)**(n_segments - 1)
     
                         line_prod = np.array(line_state_probs) * obs_prob[:, np.newaxis]
-                        sum_rate = np.sum(line_prod)   # this is R, summed over all active lineages
+
+                        # Summing the reassortment rate across all currently active lineages
+                        sum_rate = np.sum(line_prod)
     
                         prob_no_reassort *= np.exp(-sum_rate * reassortment_rate * dt)
 
