@@ -124,143 +124,76 @@ class SCAR(object):
             
             # Update active lineages based on event type: coalescent/sampling/migration events
             if 'sample' == event_type:
-                
-                # Add sampled lineage
-                active_lines.append(i)
-                # Calculate how many ancestral segments the active lineage carries
-                active_segments.append(self._get_line_segment_count(i,children,segments))
+                out_mask = (children == i)          # this sample's one outgoing edge
+                out_idx = np.flatnonzero(out_mask)[0]
+                active_lines.append(out_idx)
+                active_segments.append(len(segments[out_idx]))
                 state_probs = np.zeros(pops)
-                #if event.population == -1: # we never assigned populations
-                state_probs[0] = 1.0 # set prob to 1.0 for sampled state
-                #else:
-                #    state_probs[event.population] = 1.0 # set prob to 1.0 for sampled state
-                line_state_probs.append(state_probs)            
-            
+                state_probs[0] = 1.0
+                line_state_probs.append(state_probs)
+
             if 'coalescent' == event_type:
-                
-                # Get children of parent node at coalescent event
-                coal_children = children[parents == i] # parent has id == i in parent column of edges table
-                
-                # Get uniique children b/c the same parent/child edge may occur more than once in the tree series if not in contiguous local trees
-                coal_children = np.unique(coal_children)
-                
-                # Find coal_children in active_lines
-                coal_children = [x for x in coal_children if x in active_lines]
-                child_indexes = [active_lines.index(x) for x in coal_children]
-                
-                # Compute coalescent event prob for arbitrary number of children 
+                # incoming: any active lineage whose edge terminates at i
+                child_indexes = [k for k, e in enumerate(active_lines) if parents[e] == i]
+
                 coal_probs = np.ones(pops)
                 for child_idx in child_indexes:
                     coal_probs *= line_state_probs[child_idx]
                 coal_probs = coal_probs / self.Ne
                 lambda_sum = sum(coal_probs)
                 event_prob = lambda_sum
-                
-                # Compute new parent state probs
-                #if self.known_ancestral_states:
-                #    parent_probs = np.zeros(pops)
-                #    parent_probs[event.population] = 1.0
-                #else:
-                parent_probs = coal_probs / lambda_sum # renormalize probs
-                    
-                # Update lineage arrays - overwriting child1 with parent
-                active_lines[child_indexes[0]] = i # name of parent
-                active_segments[child_indexes[0]] = self._get_line_segment_count(i,children,segments)
-                line_state_probs[child_indexes[0]] = parent_probs
-                child_indexes.pop(0) # remove first index given to parent
-                for child_idx in sorted(child_indexes, reverse=True): # remove in reverse order so indexes don't change
+                parent_probs = coal_probs / lambda_sum
+
+                # outgoing: i's one new edge upward (if any — root has none)
+                out_mask = (children == i)
+                if np.any(out_mask):
+                    out_idx = np.flatnonzero(out_mask)[0]
+                    active_lines[child_indexes[0]] = out_idx
+                    active_segments[child_indexes[0]] = len(segments[out_idx])
+                    line_state_probs[child_indexes[0]] = parent_probs
+                    child_indexes.pop(0)
+                else:
+                    # root — this lineage just terminates
+                    del_targets = child_indexes
+                    child_indexes = child_indexes[1:] if len(child_indexes) > 1 else []
+                    # (handle root termination however your likelihood expects)
+
+                for child_idx in sorted(child_indexes, reverse=True):
                     del active_lines[child_idx]
                     del active_segments[child_idx]
                     del line_state_probs[child_idx]
-            
-            #if 'hidden_coalescent' == event_type:
-                
-                # Hidden coalescent in ARG not observed in local trees - only need to update active_lines but nothing else
-                
-            #    coal_children = children[parents == i]
-            #    coal_children = np.unique(coal_children)
-            #    child1 = coal_children[0]
-            #    child2 = coal_children[1]
-            #    child1_idx = active_lines.index(child1)
-            #    child2_idx = active_lines.index(child2)
-                
-                # Compute likelihood of coalescent event
-            #    p1 = line_state_probs[child1_idx]
-            #    p2 = line_state_probs[child2_idx]
-            #    coal_probs = (p1 * p2) / self.Ne
-            #    lambda_sum = sum(coal_probs)
-            #    event_prob = lambda_sum
-                
-                # Compute new parent state probs"
-            #    if self.known_ancestral_states:
-            #        parent_probs = np.zeros(pops)
-            #        parent_probs[event.population] = 1.0
-            #    else:
-            #        parent_probs = coal_probs / lambda_sum
-                
-                # Update lineage arrays - overwriting child1 with parent"
-            #    active_lines[child1_idx] = i # name of parent
-            #    active_segments[child1_idx] = self._get_line_segment_count(i,children,segments)
-            #    line_state_probs[child1_idx] = parent_probs
-            #    del active_lines[child2_idx]
-            #    del active_segments[child2_idx]
-            #    del line_state_probs[child2_idx]
-            
+
             if 'recombination' == event_type:
-                
-                # Find child of parent node 
-                child = children[parents == i]
-                child = np.unique(child)
-                assert len(child) == 1
-                child = child[0]
+                # incoming: the one active lineage whose edge terminates at i
+                child_indexes = [k for k, e in enumerate(active_lines) if parents[e] == i]
+                assert len(child_indexes) == 1
+                child_idx = child_indexes[0]
 
-                # Remember that child may have already been removed from active_lines
-                if child in active_lines:
-                    
-                    # Node i's two parents are what this event splits into
-                    recomb_parents = parents[children == i]
-                    recomb_parents = np.unique(recomb_parents)
-                    
-                    child_idx = active_lines.index(child)
-                    
-                    if len(recomb_parents) == 1:
-                        # All segments went to the same parent by chance, so reassortment is unobservable
-                        # This does not contribute to the likelihood
-                        parent = recomb_parents[0]
-                        active_lines[child_idx] = parent
-                        active_segments[child_idx] = self._get_line_segment_count(parent, children, segments)
-                        event_prob = 1.0
-                    
-                    else:
-                        assert len(recomb_parents) == 2, \
-                            f"Node {i}: expected 1 or 2 parents, got {len(recomb_parents)}"
-                        # If there are two parents, this is a detectable reassortment event
-                        # This does contribute to the likelihood 
+                # outgoing: i's edge(s) upward — read parent AND segments straight off them
+                out_mask = (children == i)
+                out_parents = parents[out_mask]
+                out_segments = segments[out_mask]
 
-                        left_parent, right_parent = recomb_parents[0], recomb_parents[1]
-        
-                        links = active_segments[child_idx]  # segment count of the pre-split lineage
-                        event_prob = reassortment_rate * (1 - (0.5)**(links - 1))
-                        
-                        parent_probs = line_state_probs[child_idx]
-                        
-                        # Isolate each branch's own edge so you can track which segments correspond to a lineage
-                        left_mask = (parents == left_parent)
-                        right_mask = (parents == right_parent)
-                        
-                        # Relabel both branches with i (this node's own id) - matches the
-                        # convention used by the coalescent block
-                        active_lines[child_idx] = i
-                        active_segments[child_idx] = self._get_line_segment_count(
-                            i, children[left_mask], segments[left_mask]
-                        )
-                        line_state_probs[child_idx] = parent_probs
-                        
-                        active_lines.append(i)
-                        active_segments.append(self._get_line_segment_count(
-                            i, children[right_mask], segments[right_mask]
-                        ))
-                        line_state_probs.append(parent_probs)
+                if len(out_parents) == 1:
+                    # unobservable reassortment — single continuation
+                    active_lines[child_idx] = np.flatnonzero(out_mask)[0]
+                    active_segments[child_idx] = len(out_segments[0])
+                    event_prob = 1.0
+                else:
+                    assert len(out_parents) == 2, f"Node {i}: expected 1 or 2 parents, got {len(out_parents)}"
+                    links = active_segments[child_idx]
+                    event_prob = reassortment_rate * (1 - (0.5)**(links - 1))
+                    parent_probs = line_state_probs[child_idx]
+
+                    out_idx_0, out_idx_1 = np.flatnonzero(out_mask)
+
+                    active_lines[child_idx] = out_idx_0
+                    active_segments[child_idx] = len(out_segments[0])
+                    line_state_probs[child_idx] = parent_probs
+
+                    active_lines.append(out_idx_1)
+                    active_segments.append(len(out_segments[1]))
+                    line_state_probs.append(parent_probs)
             
             #if 'migration' == event_type:
                 
