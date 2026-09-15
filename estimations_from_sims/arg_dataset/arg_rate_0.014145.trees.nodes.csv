@@ -1,0 +1,30 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,2.213709606063767,coalescence,
+11,9.183725198314429,coalescence,
+12,9.20755746020839,coalescence,
+13,13.591851253322679,coalescence,
+14,18.29516352480262,coalescence,
+15,19.9590475196935,coalescence,
+16,24.501953342640828,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+17,27.652223409439795,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+18,36.97574692956352,coalescence,
+19,40.12970714629571,coalescence,
+20,55.41078727921402,coalescence,
+21,81.99226578674873,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+22,88.97602211058434,coalescence,
+23,104.45672327671616,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+24,125.89100714471839,coalescence,
+25,162.86460244834228,coalescence,
+26,285.0182240983577,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+27,339.55307326860196,coalescence,
+28,371.7547481770917,coalescence,

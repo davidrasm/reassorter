@@ -1,0 +1,44 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,1.3911584757644797,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+11,2.421772137677909,coalescence,
+12,2.632212905804805,coalescence,
+13,7.3031279104446,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+14,7.401152782281458,coalescence,
+15,9.474294432778173,coalescence,
+16,12.527044703243211,coalescence,
+17,13.452627567597865,coalescence,
+18,16.212372160143392,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+19,17.729956632833495,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+20,19.376930512796303,coalescence,
+21,21.737804379517428,coalescence,
+22,23.270422335206437,coalescence,
+23,23.917608378260066,coalescence,
+24,32.55995844420041,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+25,35.68090945992258,coalescence,
+26,37.935896986187686,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+27,71.36340613651322,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+28,72.65010239497009,coalescence,
+29,79.38313121983377,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+30,90.5133036753961,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+31,96.72326778579024,coalescence,
+32,97.1090411582561,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+33,97.42578674058717,coalescence,
+34,98.78302065061825,coalescence,
+35,98.8466084295754,coalescence,
+36,103.21170001168265,coalescence,
+37,117.20504914041908,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+38,119.07891865836554,coalescence,
+39,121.79579022132431,coalescence,
+40,129.7422201229748,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+41,143.11262735188745,coalescence,
+42,144.04945801087914,coalescence,

@@ -1,0 +1,50 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.15831231471147472,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+11,0.5262202730348216,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+12,1.1674263900246342,coalescence,
+13,4.3364137950631765,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+14,4.524839790142995,coalescence,
+15,9.012339909534603,coalescence,
+16,9.088443555538987,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+17,9.894564375487743,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+18,10.202791735637037,coalescence,
+19,11.076537236093873,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+20,11.991799969931398,coalescence,
+21,12.148685558881086,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+22,12.617255506231684,coalescence,
+23,13.066432066133348,coalescence,
+24,13.865466215623023,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+25,14.467761765443914,coalescence,
+26,15.54382652360274,coalescence,
+27,16.739023170691553,coalescence,
+28,19.155066885839595,coalescence,
+29,20.45826165080248,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0), (2.0, 3.0)]}"
+30,22.87171554222354,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+31,25.201678248801656,coalescence,
+32,26.71451634138354,coalescence,
+33,27.161312708222766,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+34,28.054600535246532,coalescence,
+35,30.254822532788207,coalescence,
+36,33.02048910967889,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+37,38.615883817607106,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+38,38.73614783323173,coalescence,
+39,41.871855795984516,coalescence,
+40,44.95783558295402,coalescence,
+41,46.230294224317454,coalescence,
+42,46.5658087811063,coalescence,
+43,73.32218424901338,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+44,74.20948165097008,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+45,75.38313303875937,coalescence,
+46,89.12284044876145,coalescence,
+47,90.44127270859703,coalescence,
+48,218.34259360457162,coalescence,

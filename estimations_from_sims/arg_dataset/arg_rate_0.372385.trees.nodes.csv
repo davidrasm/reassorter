@@ -1,0 +1,107 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.1789120653997369,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+11,0.2047805671454154,coalescence,
+12,0.6649102869648554,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+13,0.9658197789624121,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+14,1.0625486538920048,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+15,1.8413241663771271,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+16,2.518894185415916,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+17,2.645537701404788,coalescence,
+18,3.104042529288338,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+19,4.385910820610009,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+20,4.467646113375847,recombination,"{'to_first': [(0.0, 1.0), (1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+21,4.538930742056902,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+22,4.936368898938907,coalescence,
+23,5.257850426364028,coalescence,
+24,5.401346528501344,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+25,6.2427102574939894,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+26,7.275786898105203,coalescence,
+27,7.554801376687698,coalescence,
+28,7.565875154811486,coalescence,
+29,7.741313304788275,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+30,7.974108436125802,coalescence,
+31,8.33543214197066,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+32,8.762430242139885,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+33,9.511990620110291,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+34,10.485419089854888,coalescence,
+35,10.585248716958546,coalescence,
+36,11.2250410517439,coalescence,
+37,11.732430990866277,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+38,11.774410206411762,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0), (2.0, 3.0)]}"
+39,11.977412405827089,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+40,13.015599207804694,coalescence,
+41,13.018121092340868,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+42,13.461887860782602,coalescence,
+43,13.50320441305757,coalescence,
+44,13.833682787500415,coalescence,
+45,15.339347004326067,coalescence,
+46,17.1743531638301,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0), (1.0, 2.0)]}"
+47,17.51919187801883,coalescence,
+48,18.038248317531327,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+49,18.081860648892,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+50,19.53724206113544,coalescence,
+51,21.225335623067103,coalescence,
+52,22.345576700811055,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+53,22.635943972156,coalescence,
+54,23.429669959660405,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0), (1.0, 2.0)]}"
+55,23.93310758162159,coalescence,
+56,26.458913949366952,coalescence,
+57,26.702185376143273,coalescence,
+58,27.077280540739505,coalescence,
+59,27.500192865904516,coalescence,
+60,29.60773009013114,coalescence,
+61,29.761680416722847,coalescence,
+62,32.37334618328138,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+63,32.525835022918734,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+64,33.00949721569738,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+65,33.05576287061145,coalescence,
+66,33.508690138245704,coalescence,
+67,33.719630516084955,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+68,33.77413482915086,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+69,34.47200789271736,coalescence,
+70,35.38055920130217,coalescence,
+71,37.87603316291356,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+72,39.15529362087761,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+73,40.59813563542503,coalescence,
+74,41.1509827809339,coalescence,
+75,41.28803327269683,coalescence,
+76,43.3136936024191,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+77,43.5219367335221,coalescence,
+78,44.925296910311246,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+79,44.952861316886384,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+80,45.03181127689488,coalescence,
+81,46.13891742810157,coalescence,
+82,48.4229747512078,coalescence,
+83,50.00478849498964,coalescence,
+84,55.07601623067715,coalescence,
+85,57.5051149977831,recombination,"{'to_first': [(1.0, 2.0), (2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+86,60.44127985716439,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+87,61.19800628691647,coalescence,
+88,67.63468772530231,coalescence,
+89,69.263103411281,coalescence,
+90,69.47425134995517,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+91,71.91485753368285,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+92,71.95775777808298,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+93,77.40824936529427,coalescence,
+94,77.76989154267217,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+95,78.88586615930554,coalescence,
+96,81.1265392136913,coalescence,
+97,84.52300320652985,coalescence,
+98,85.61013155907075,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+99,89.45929825522785,coalescence,
+100,96.69796621517725,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+101,101.81789899927041,coalescence,
+102,103.58185266269402,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+103,127.09387518215864,coalescence,
+104,148.60468594402042,coalescence,
+105,319.65845717628054,coalescence,

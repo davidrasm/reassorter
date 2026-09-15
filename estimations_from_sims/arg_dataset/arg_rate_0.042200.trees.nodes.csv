@@ -1,0 +1,44 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.21764412254112528,coalescence,
+11,3.2643862501805803,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+12,3.341015197795638,coalescence,
+13,5.1102135616784405,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+14,7.256315695345762,coalescence,
+15,10.27100663283214,coalescence,
+16,12.150575673525868,coalescence,
+17,12.450795379701619,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+18,13.654336823448476,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+19,15.008593081452341,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+20,22.67619740192429,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+21,25.60608585841313,coalescence,
+22,28.230015095781223,coalescence,
+23,29.402141260586934,coalescence,
+24,30.016860745993085,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+25,33.34143062301851,coalescence,
+26,37.39845944648857,coalescence,
+27,38.12927341241514,coalescence,
+28,40.351123017293595,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+29,44.723345280668255,coalescence,
+30,50.407429671521015,coalescence,
+31,50.42820615999313,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+32,51.21227020172285,coalescence,
+33,51.90633607969564,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+34,59.084465181201445,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+35,63.07153198145686,coalescence,
+36,70.02470677595109,coalescence,
+37,73.04517050561843,coalescence,
+38,82.48243326964997,coalescence,
+39,104.82733985798224,coalescence,
+40,121.06449982892882,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+41,202.063295802639,coalescence,
+42,203.67146165188908,coalescence,

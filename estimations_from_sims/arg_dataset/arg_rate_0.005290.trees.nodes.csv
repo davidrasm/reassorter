@@ -1,0 +1,26 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,3.002209486733207,coalescence,
+11,7.643332741895183,coalescence,
+12,14.39612432676717,coalescence,
+13,17.52774100311029,coalescence,
+14,17.94302960688104,coalescence,
+15,18.900413048739694,coalescence,
+16,34.52327215762901,coalescence,
+17,40.01964721025284,coalescence,
+18,154.88220866132116,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+19,172.23464608334334,coalescence,
+20,305.31000020413535,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+21,316.5026598917143,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+22,319.23848685276926,coalescence,
+23,436.2838748493071,coalescence,
+24,495.6653240867051,coalescence,

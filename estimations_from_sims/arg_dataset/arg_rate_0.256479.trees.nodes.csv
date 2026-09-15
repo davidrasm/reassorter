@@ -1,0 +1,108 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.07530172988927945,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+11,0.4379995564783241,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+12,0.7180499428873015,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+13,0.8336322724138926,coalescence,
+14,1.0833354461088756,coalescence,
+15,1.327924474843135,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+16,2.1626954707178774,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+17,3.00840687558242,coalescence,
+18,3.053209584019633,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+19,3.5109543189923254,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+20,3.767061935935949,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+21,3.8979127250030574,coalescence,
+22,4.318177816189233,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+23,4.649301561013721,coalescence,
+24,6.514498833157205,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+25,7.108687943954712,coalescence,
+26,7.832021785402093,coalescence,
+27,8.104106266051676,coalescence,
+28,8.145253765703455,recombination,"{'to_first': [(1.0, 2.0), (2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+29,8.697576787911686,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+30,8.862006172957717,coalescence,
+31,9.183080158877226,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+32,9.27467451157387,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+33,9.480147465965004,coalescence,
+34,10.276323636156576,coalescence,
+35,11.141684593981937,coalescence,
+36,11.305551257023248,coalescence,
+37,12.339354896494209,coalescence,
+38,12.630900811151998,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+39,13.445621441815831,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+40,16.485361576552002,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+41,16.627331704132448,coalescence,
+42,17.21842815335514,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+43,18.534265053468097,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+44,18.75309225461331,coalescence,
+45,18.753176529618944,coalescence,
+46,19.220048841834895,coalescence,
+47,20.028481209463802,coalescence,
+48,31.443404060040628,coalescence,
+49,32.80858269398914,coalescence,
+50,34.90514130168342,coalescence,
+51,36.75463958363666,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+52,37.96080146940865,coalescence,
+53,39.52693734266716,coalescence,
+54,39.97879708384138,recombination,"{'to_first': [(1.0, 2.0), (2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+55,41.85321560743905,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+56,43.02495224169802,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+57,46.9860887728222,coalescence,
+58,50.16232960237853,coalescence,
+59,56.17071299031268,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+60,56.37007137771581,coalescence,
+61,56.43979937762359,coalescence,
+62,58.10211432526905,coalescence,
+63,58.85871662281325,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+64,59.050550420630316,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+65,63.08207606509588,coalescence,
+66,63.92218729045958,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+67,67.50372071460009,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+68,69.13366670567001,coalescence,
+69,72.45638877935494,coalescence,
+70,83.1139015076701,coalescence,
+71,84.12052413668361,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+72,85.78119914158617,coalescence,
+73,89.80637681583238,coalescence,
+74,93.38104364347512,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+75,101.82611082847995,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+76,102.12183519637564,coalescence,
+77,103.37648897647024,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+78,111.71043195915063,coalescence,
+79,112.04792958768864,coalescence,
+80,113.48063208500146,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+81,120.37480341176217,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+82,126.05411012130679,coalescence,
+83,138.6702844004864,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+84,143.88725341878413,coalescence,
+85,152.1842374206658,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+86,165.0776027758384,coalescence,
+87,166.10677035845762,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+88,170.08742262145628,coalescence,
+89,172.15166228709842,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+90,172.80331565520726,coalescence,
+91,173.5397640560095,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+92,174.23138954376998,coalescence,
+93,175.53665389982345,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+94,193.3228375431723,coalescence,
+95,195.83974675632794,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+96,211.86514976838401,coalescence,
+97,213.38277422927575,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+98,220.81783740486185,coalescence,
+99,222.0253811210469,coalescence,
+100,222.78935980460503,coalescence,
+101,224.56217370479266,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+102,282.8599405209458,coalescence,
+103,283.6822783899032,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+104,285.123883463626,coalescence,
+105,294.044874497295,coalescence,
+106,328.2583885384475,coalescence,

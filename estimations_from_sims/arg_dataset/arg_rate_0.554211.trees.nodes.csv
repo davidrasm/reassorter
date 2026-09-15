@@ -1,0 +1,91 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.11184744499049083,coalescence,
+11,0.20329386267501232,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+12,0.5079126887379783,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+13,0.6765792043807366,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+14,0.9273898654511146,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+15,1.0808715355034935,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+16,1.5468748101493945,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+17,2.2143589563016293,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+18,2.4324774469478547,coalescence,
+19,2.60609011549085,coalescence,
+20,3.5396545455407353,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+21,3.6532506768279585,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+22,3.9030067553807695,coalescence,
+23,4.015193409487932,coalescence,
+24,4.137170462655474,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+25,4.232659843644531,coalescence,
+26,4.249182536668524,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0), (1.0, 2.0)]}"
+27,4.255947268317838,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+28,4.620417757390274,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+29,4.698011992504113,coalescence,
+30,4.909161441989184,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+31,5.260382231129509,coalescence,
+32,5.489361883941337,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+33,5.821367929638613,recombination,"{'to_first': [(1.0, 2.0), (2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+34,6.129382303583655,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+35,6.7218978868984,coalescence,
+36,7.600909815226938,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+37,7.9501129372046195,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+38,8.013419437907231,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+39,8.11077730753845,coalescence,
+40,8.742486415532557,coalescence,
+41,9.921296713180901,coalescence,
+42,10.356246741599147,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+43,10.441004267272332,coalescence,
+44,10.832231990937705,coalescence,
+45,10.946313780186912,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+46,12.33282407464005,coalescence,
+47,12.580941356211266,coalescence,
+48,12.60493251309406,coalescence,
+49,13.02547087976049,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+50,13.637206142920801,coalescence,
+51,16.649252709069692,coalescence,
+52,16.890842991530253,coalescence,
+53,19.282224216337152,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+54,19.62570609217668,coalescence,
+55,19.774318403321487,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+56,20.097877592206974,coalescence,
+57,20.548398971056688,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+58,20.863048854459358,coalescence,
+59,21.089676337718466,coalescence,
+60,21.429017135954943,coalescence,
+61,21.579693572436753,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+62,22.01277475592474,coalescence,
+63,22.910947450109365,coalescence,
+64,24.13259838609691,coalescence,
+65,25.324928788310466,recombination,"{'to_first': [(0.0, 1.0), (1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+66,26.73142072615942,coalescence,
+67,28.703759204703104,coalescence,
+68,29.288192305095237,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+69,29.679824187739438,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+70,30.934443378274832,coalescence,
+71,33.22119014551833,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+72,34.75543917483113,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0)]}"
+73,34.76759809650102,coalescence,
+74,34.835026996700016,coalescence,
+75,35.980837746301816,coalescence,
+76,38.37377018453875,coalescence,
+77,39.05150582491004,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(2.0, 3.0)]}"
+78,39.402651478909924,coalescence,
+79,40.113617339596395,coalescence,
+80,40.114841717530425,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+81,41.382256974217206,coalescence,
+82,45.271730296825126,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+83,48.412418533295934,coalescence,
+84,65.38647031173414,coalescence,
+85,65.8058888871142,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+86,84.97178732807069,coalescence,
+87,88.86781344840415,coalescence,
+88,145.13334535401287,coalescence,
+89,241.20704255700917,coalescence,

@@ -1,0 +1,34 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,0.9122806920799023,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+11,2.3741566830716465,coalescence,
+12,3.9124587064668246,coalescence,
+13,5.9873532020844475,recombination,"{'to_first': [(0.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+14,8.696222891167908,coalescence,
+15,10.530696182038785,coalescence,
+16,12.65700365347698,coalescence,
+17,14.882111172242205,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+18,15.648722158245278,coalescence,
+19,16.984052018874227,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+20,17.333044502196387,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 2.0)]}"
+21,22.16388185503282,coalescence,
+22,27.82610186707781,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+23,32.26923129792893,coalescence,
+24,37.3109681360699,coalescence,
+25,37.412119051315294,coalescence,
+26,56.57869248514724,coalescence,
+27,56.57876721238611,coalescence,
+28,59.01208801560841,coalescence,
+29,65.44090012758353,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+30,72.3713423500294,coalescence,
+31,104.71068463402469,coalescence,
+32,186.57091267881356,coalescence,

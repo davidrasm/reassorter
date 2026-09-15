@@ -1,0 +1,50 @@
+id,time,type,meta
+0,0.0,sample,
+1,0.0,sample,
+2,0.0,sample,
+3,0.0,sample,
+4,0.0,sample,
+5,0.0,sample,
+6,0.0,sample,
+7,0.0,sample,
+8,0.0,sample,
+9,0.0,sample,
+10,1.9180579212566347,coalescence,
+11,1.988662154670429,coalescence,
+12,9.932382412638328,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+13,13.56243534544774,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+14,21.46521930706927,coalescence,
+15,24.7110304443405,recombination,"{'to_first': [(1.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+16,27.713644052978776,coalescence,
+17,29.582646717747394,coalescence,
+18,32.15485401118249,coalescence,
+19,33.08166528589152,coalescence,
+20,34.45484325517588,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+21,35.76287823908832,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+22,36.21129831184316,coalescence,
+23,37.07633491337746,coalescence,
+24,39.65651541637927,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 3.0)]}"
+25,41.120078015182024,coalescence,
+26,43.396272443230245,coalescence,
+27,47.438243486947854,coalescence,
+28,52.958105323107816,recombination,"{'to_first': [(0.0, 1.0), (2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+29,73.06043288916916,coalescence,
+30,77.68439562519501,coalescence,
+31,96.02184968341226,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(2.0, 3.0)]}"
+32,101.37377790699676,coalescence,
+33,101.44945448461195,coalescence,
+34,144.2578443594315,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0), (2.0, 3.0)]}"
+35,156.64967185460318,recombination,"{'to_first': [(0.0, 1.0)], 'to_second': [(1.0, 2.0), (2.0, 3.0)]}"
+36,172.55003349955626,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0)]}"
+37,182.70682872984224,coalescence,
+38,183.95900172765522,coalescence,
+39,205.33913279720917,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(1.0, 2.0)]}"
+40,208.1980430546163,recombination,"{'to_first': [(2.0, 3.0)], 'to_second': [(0.0, 1.0), (1.0, 2.0)]}"
+41,212.066660341884,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+42,223.24862984097763,coalescence,
+43,225.8601002662051,coalescence,
+44,228.8062740797182,coalescence,
+45,260.97631457084736,coalescence,
+46,262.62821932981205,recombination,"{'to_first': [(1.0, 2.0)], 'to_second': [(0.0, 1.0)]}"
+47,288.2689964358145,coalescence,
+48,372.5118894753235,coalescence,
