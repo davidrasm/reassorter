@@ -152,11 +152,7 @@ class SCAR(object):
                     active_segments[child_indexes[0]] = len(segments[out_idx])
                     line_state_probs[child_indexes[0]] = parent_probs
                     child_indexes.pop(0)
-                else:
-                    # root — this lineage just terminates
-                    del_targets = child_indexes
-                    child_indexes = child_indexes[1:] if len(child_indexes) > 1 else []
-                    # (handle root termination however your likelihood expects)
+                # Otherwise this is a root: leave child_indexes whole so every # incoming lineage is deleted by the loop below.
 
                 for child_idx in sorted(child_indexes, reverse=True):
                     del active_lines[child_idx]
@@ -302,20 +298,20 @@ class SCAR(object):
 
         return -log_like
 
-
-    def _get_line_segment_count(self,line,children,segments):
+    # The below function is obselete because the number of segments ancestral to the sample is calculated within the compute_neg_log_likelihood function
+    #def _get_line_segment_count(self,line,children,segments):
+    #    
+    #    """
+    #        Compute the number of segments ancestral to the sample and thus eligible to undergo reassortment
+    #    """
         
-        """
-            Compute the number of segments ancestral to the sample and thus eligible to undergo reassortment
-        """
-        
-        line_segments = segments[children == line]
-        if len(line_segments) == 0:
-            return 0
-        all_segs = set()
-        for seg_list in line_segments:
-            all_segs.update(seg_list)
-        return len(all_segs)  
+    #    line_segments = segments[children == line]
+    #    if len(line_segments) == 0:
+    #        return 0
+    #    all_segs = set()
+    #    for seg_list in line_segments:
+    #        all_segs.update(seg_list)
+    #    return len(all_segs)  
     
     def opt_MLE(self, table_nodes, table_edges):
 

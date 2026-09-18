@@ -685,7 +685,8 @@ def main(argv=None):
             p.error("--segments must be >= 1")
         genome_length = float(args.segments)
 
-    record_graph = args.plot is not None
+    #record_graph = args.plot is not None
+    record_graph = True
     rng = random.Random(args.seed)
     sims = [simulate_arg(args.num_samples, args.Ne, genome_length,
                          ploidy=args.ploidy, rng=rng, mode=args.mode,
