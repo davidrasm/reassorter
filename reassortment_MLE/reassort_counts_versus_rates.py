@@ -4,6 +4,7 @@ import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# Is reassortment event observable (segments from two parents) or unobservable (segments from one parent)?
 def classify_recombination(meta_str):
     meta = ast.literal_eval(meta_str)
     to_first = meta.get('to_first', [])
@@ -12,13 +13,12 @@ def classify_recombination(meta_str):
 
 records = []
 
-# NOTE: adjust this glob + regex to match however your script actually
-# names its nodes.csv files (e.g. "arg_rate_0.0123_nodes.csv")
+# Loop through nodes.csv files and count number of observable and unobservable events
 for nodes_file in glob.glob("arg_rate_*.trees.nodes.csv"): 
     match = re.search(r"arg_rate_([\d.eE+-]+).trees.nodes\.csv", nodes_file)
     rate = float(match.group(1))
 
-    df = pd.read_csv(nodes_file)  # use sep="\t" instead if these are tab-delimited
+    df = pd.read_csv(nodes_file)  
     recomb = df[df['type'] == 'recombination']
 
     counts = recomb['meta'].apply(classify_recombination).value_counts()
@@ -32,9 +32,11 @@ for nodes_file in glob.glob("arg_rate_*.trees.nodes.csv"):
         'total': n_obs + n_unobs,
     })
 
+# Write counts to summary csv
 results = pd.DataFrame(records).sort_values('rate')
 results.to_csv('reassortment_summary.csv', index=False)
 
+# Plot counts of events versus rate
 fig, ax = plt.subplots(figsize=(7, 5))
 ax.scatter(results['rate'], results['total'], label='Total', alpha=0.7)
 ax.scatter(results['rate'], results['observable'], label='Observable', alpha=0.7)
