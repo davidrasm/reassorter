@@ -45,7 +45,6 @@ for csv in sorted(glob.glob(os.path.join(results_dir, '*_lrt_results.csv'))):
     # Estimated: SPRs in the MAF of the ML trees, and how many the LRT supports
     n_spr_ml = len(df)
     n_sig = int((df['p_value'] < alpha).sum())
-    n_sig_bonf = int((df['p_value'] < alpha / max(n_spr_ml, 1)).sum())
 
     # "Truth" comparable to the method: SPRs in the MAF of the true segment trees
     taxa = dendropy.TaxonNamespace()
@@ -66,7 +65,7 @@ for csv in sorted(glob.glob(os.path.join(results_dir, '*_lrt_results.csv'))):
                  'ARG_observable': n_obs, 'ARG_unobservable': n_unobs,
                  'ARG_total': None if n_obs is None else n_obs + n_unobs,
                  'true_SPRs': n_spr_true, 'ML_SPRs': n_spr_ml,
-                 'LRT_supported': n_sig, 'LRT_supported_bonf': n_sig_bonf})
+                 'LRT_supported': n_sig})
 
 out = pd.DataFrame(rows).sort_values('reassort_rate')
 out['error_vs_trueSPRs'] = out['LRT_supported'] - out['true_SPRs']
